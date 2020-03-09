@@ -30,7 +30,11 @@ class ModelLoader(sciunit.Model,
                  cap.ReceivesSquareCurrent_ProvidesResponse_MultipleLocations,
                  cap.ProvidesRecordingLocationsOnTrunk,
                  cap.ProvidesRandomDendriticLocations,
-                 cap.ReceivesEPSCstim):
+                 cap.ReceivesEPSCstim,
+                 cap.InitialiseModel,
+                 cap.ThetaSynapticStimuli,
+                 cap.RunSimulation_ReturnTraces,
+                 cap.NumOfPossibleLocations):
 
     def __init__(self, name="model", mod_files_path=None):
         """ Constructor. """
@@ -85,6 +89,9 @@ class ModelLoader(sciunit.Model,
         self.ns_list = []
         self.ampa_nc_list = []
         self.nmda_nc_list = []
+
+        self.synapse_lists = {} 
+        self.spine_dict ={}
 
         self.ndend = None
         self.xloc = None
@@ -1036,3 +1043,717 @@ class ModelLoader_BPO(ModelLoader):
             print("Could not find model specific info for `celsius`; using default value of {} degrees Celsius".format(str(self.celsius)))
         else:
             self.celsius = celsius
+
+
+
+class ModelLoader_Spine_syn(ModelLoader):
+
+    def __init__(self, name="model", mod_files_path=None):
+        """ Constructor. """
+        """ This class should be used with Jupyter notebooks"""
+        super(ModelLoader_Spine_syn, self).__init__(name=name, mod_files_path=mod_files_path)
+
+
+        self.start=400
+
+        self.SecList = None
+
+    """ Inputs are on different spines"""
+ 
+    '''
+    def block_Na(self):
+        h("forsec all_dendrites {gmax_Na_BG_dend = 0.0}")
+        h("soma {gmax_Na_BG_soma = 0.0}")
+        h("forsec all_axon{gmax_Na_BG_axon = 0.0}")
+    '''
+
+
+    def get_random_locations(self, num, seed, dist_range):
+
+        if self.SecList is None:
+            raise NotImplementedError("Please give the name of the section list containing the dendritic sections of interest. (eg. model.SecList=\"trunk\"")
+
+        locations=[]
+        locations_distances = {}
+
+        if self.SecList is not None:
+            self.initialise()
+
+            if self.template_name is not None:
+                exec('self.dendrites=h.testcell.' + self.SecList)
+
+            else:
+                exec('self.dendrites=h.' + self.SecList)
+        '''
+        if self.find_section_lists:
+
+            self.initialise()
+
+            if self.template_name is not None:
+                exec('self.icell=h.testcell')
+
+            apical_trunk_isections, apical_tuft_isections, oblique_isections = self.classify_apical_point_sections(self.icell)
+            apical_trunk_isections = sorted(apical_trunk_isections) # important to keep reproducability
+
+            self.trunk = []
+            for i in range(len(apical_trunk_isections)):
+                exec('self.sec = h.testcell.apic[' + str(apical_trunk_isections[i]) + ']')
+                self.trunk.append(self.sec)
+        else:
+        
+            self.dendrites = list(self.dendrites)
+        '''
+        self.dendrites = list(self.dendrites)
+
+        kumm_length_list = []
+        kumm_length = 0
+        num_of_secs = 0
+
+
+        for sec in self.dendrites:
+            #print sec.L
+            num_of_secs += sec.nseg
+            kumm_length += sec.L
+            kumm_length_list.append(kumm_length)
+        #print 'kumm' ,kumm_length_list
+        #print num_of_secs
+
+        if num > num_of_secs:
+            for sec in self.dendrites:
+                h(self.soma + ' ' +'distance()')
+                h('access ' + sec.name())
+                for seg in sec:
+                    if h.distance(seg.x) > dist_range[0] and h.distance(seg.x) < dist_range[1]:     # if they are out of the distance range they wont be used
+                        locations.append([sec.name(), seg.x])
+                        locations_distances[sec.name(), seg.x] = h.distance(seg.x)
+            #print 'Dendritic locations to be tested (with their actual distances):', locations_distances
+
+        else:
+
+            norm_kumm_length_list = [i/kumm_length_list[-1] for i in kumm_length_list]
+            #print 'norm kumm',  norm_kumm_length_list
+
+            import random
+
+            _num_ = num  # _num_ will be changed
+            num_iterations = 0
+
+            while len(locations) < num and num_iterations < 50 :
+                #print 'seed ', seed
+                random.seed(seed)
+                rand_list = [random.random() for j in range(_num_)]
+                #print rand_list
+
+                for rand in rand_list:
+                    #print 'RAND', rand
+                    for i in range(len(norm_kumm_length_list)):
+                        if rand <= norm_kumm_length_list[i] and (rand > norm_kumm_length_list[i-1] or i==0):
+                            #print norm_kumm_length_list[i-1]
+                            #print norm_kumm_length_list[i]
+                            seg_loc = (rand - norm_kumm_length_list[i-1]) / (norm_kumm_length_list[i] - norm_kumm_length_list[i-1])
+                            #print 'seg_loc', seg_loc
+                            segs = [seg.x for seg in self.dendrites[i]]
+                            d_seg = [abs(seg.x - seg_loc) for seg in self.dendrites[i]]
+                            min_d_seg = numpy.argmin(d_seg)
+                            segment = segs[min_d_seg]
+                            #print 'segment', segment
+                            h(self.soma + ' ' +'distance()')
+                            h('access ' + self.dendrites[i].name())
+                            if [self.dendrites[i].name(), segment] not in locations and h.distance(segment) >= dist_range[0] and h.distance(segment) < dist_range[1]:
+                                locations.append([self.dendrites[i].name(), segment])
+                                locations_distances[self.dendrites[i].name(), segment] = h.distance(segment)
+                _num_ = num - len(locations)
+                #print '_num_', _num_
+                seed += 10
+                num_iterations += 1
+                #print len(locations)
+        #print 'Dendritic locations to be tested (with their actual distances):', locations_distances
+
+        return locations, locations_distances
+
+    def create_single_spine(self, dend_loc):
+
+        ndend, xloc = dend_loc
+
+        exec("self.dendrite=h." + ndend)
+
+        # dist_bw_spines = 0.284 # um
+        # length = self.dendrite.L
+        # relative_dist_bw_spines = dist_bw_spines / length
+        # print "length", length
+        # print 'relative dist of spines: ', relative_dist_bw_spines
+
+
+        # self.sneck = [h.Section(name='sneck[%d]' % i) for i in xrange(max_num_syn)]
+        # self.shead = [h.Section(name='shead[%d]' % i) for i in xrange(max_num_syn)]
+
+        self.sneck = h.Section(name='sneck')
+        self.shead = h.Section(name='shead')
+
+        #print "e_Leak_pyr", self.dendrite.e_Leak_pyr
+        #print "gmax_Leak_pyr", self.dendrite.gmax_Leak_pyr
+        #print "cm", self.dendrite.cm
+
+
+        self.sneck.L = h.sneck_len # 1.58
+        self.sneck.diam = h.sneck_diam # 0.077
+        self.shead.L = h.shead_len #0.5
+        self.shead.diam = h.shead_diam #0.5
+
+        self.sneck.insert('Leak_pyr')
+        self.sneck.e_Leak_pyr = self.dendrite.e_Leak_pyr
+        self.sneck.gmax_Leak_pyr = self.dendrite.gmax_Leak_pyr
+        self.sneck.Ra = 100
+        self.sneck.cm = self.dendrite.cm
+        # self.sneck[i].insert('cad_mod_for_ltp')
+        # h.taur_cad_mod_for_ltp = 14
+
+        self.shead.insert('Leak_pyr')
+        self.shead.e_Leak_pyr = self.dendrite.e_Leak_pyr
+        self.shead.gmax_Leak_pyr = self.dendrite.gmax_Leak_pyr
+        self.shead.Ra = 100
+        self.shead.cm = self.dendrite.cm
+        # self.shead[i].insert('cad_mod_for_ltp')
+        # h.taur_cad_mod_for_ltp = 14
+        # h.depth_cad_mod_for_ltp = h.shead_diam/2
+
+        # print "loc of spine: ", xloc + (i*relative_dist_bw_spines)
+
+        #self.sneck[i].connect(self.dendrite(xloc + (i*relative_dist_bw_spines)), 0)
+        self.sneck.connect(self.dendrite(xloc), 0)
+        self.shead.connect(self.sneck(1), 0)
+
+
+    def set_ampa_nmda(self, dend_loc):
+        """Used in ObliqueIntegrationTest"""
+
+        ndend, xloc = dend_loc
+
+        exec("self.dendrite=h." + ndend)
+
+
+        if self.AMPA_name: # if this is given, the AMPA model defined in a mod file is used, else the built in Exp2Syn
+            exec("self.ampa = h."+self.AMPA_name+"(0.5, sec=self.shead)")
+        else:
+            self.ampa = h.Exp2Syn(0.5, sec=self.shead)
+            self.ampa.tau1 = self.AMPA_tau1
+            self.ampa.tau2 = self.AMPA_tau2
+            #print 'The built in Exp2Syn is used as the AMPA component. Tau1 = ', self.AMPA_tau1, ', Tau2 = ', self.AMPA_tau2 , '.'
+
+        if self.NMDA_name: # if this is given, the NMDA model defined in a mod file is used, else the default NMDA model of HippoUnit
+            exec("self.nmda= h."+self.NMDA_name+"(0.5, sec=self.shead)")
+        else:
+            try:
+                exec("self.nmda = h."+self.default_NMDA_name+"(0.5, sec=self.shead)")
+            except:
+                h.nrn_load_dll(self.default_NMDA_path + self.libpath)
+                exec("self.nmda = h."+self.default_NMDA_name+"(0.5, sec=self.shead)")
+
+        self.ndend = ndend
+        self.xloc = xloc
+
+    def set_netstim_netcon(self, AMPA_weight):
+        """Used in ObliqueIntegrationTest"""
+
+        self.ns = h.NetStim()
+        self.ns.number = 1
+        self.ns.start = self.start
+
+        self.ampa_nc = h.NetCon(self.ns, self.ampa, 0, 0, 0)
+        self.nmda_nc = h.NetCon(self.ns, self.nmda, 0, 0, 0)
+
+        self.ampa_nc.weight[0] = AMPA_weight
+        self.nmda_nc.weight[0] =AMPA_weight/self.AMPA_NMDA_ratio
+
+
+    def run_syn(self, dend_loc, weight):
+        """Used in ObliqueIntegrationTest"""
+
+        # self.ampa_list = [None] * number
+        # self.nmda_list = [None] * number
+        # self.ns_list = [None] * number
+        # self.ampa_nc_list = [None] * number
+        # self.nmda_nc_list = [None] * number
+
+        ndend, xloc = dend_loc
+
+        dend_num = ndend.split('[')[1]  # to get the number of the dendrite (eg. 80 from dendrite[80])
+        dend_num = int(dend_num[:-1])
+        # print dend_num
+
+        self.initialise()
+
+        exec("self.dendrite=h." + ndend)
+
+        if self.cvode_active:
+            h.cvode_active(1)
+        else:
+            h.cvode_active(0)
+
+
+        #correcting F factor on the given dendrite taking the number of added spines into consideration
+        length = self.dendrite.L
+
+        # print "cm before", self.dendrite.cm
+        h.F_factor_correction_with_spines(dend_num, 1/length) # spine density = num of spines / length of dendritic section
+        #print "cm after", self.dendrite.cm
+
+
+        self.create_single_spine(dend_loc)
+
+        self.set_ampa_nmda(dend_loc)
+
+        self.set_netstim_netcon(weight)
+
+
+        exec("self.sect_loc=h." + str(self.soma)+"("+str(0.5)+")")
+
+        # initiate recording
+        rec_t = h.Vector()
+        rec_t.record(h._ref_t)
+
+        rec_v = h.Vector()
+        rec_v.record(self.sect_loc._ref_v)
+
+        rec_v_dend = h.Vector()
+        # rec_v_dend.record(self.shead[0](0.5)._ref_v)
+        rec_v_dend.record(self.dendrite(self.xloc)._ref_v)
+
+        h.stdinit()
+
+        dt = 0.025
+        h.dt = dt
+        h.steps_per_ms = 1 / dt
+        h.v_init = self.v_init #-80
+
+        h.celsius = self.celsius
+        h.init()
+        h.tstop =650
+        h.run()
+
+        # get recordings
+        t = numpy.array(rec_t)
+        v = numpy.array(rec_v)
+        v_dend = numpy.array(rec_v_dend)
+
+        return t, v, v_dend
+
+
+    """ THETA STIMULUS (Takahashi & Magee 2009) """ 
+
+    def create_spine_multiple_loc_theta(self, dend_loc, pathway):
+
+        # dist_bw_spines = 0.284 # um 
+        # length = self.dendrite.L
+        # relative_dist_bw_spines = dist_bw_spines / length
+        # print "length", length
+        # print 'relative dist of spines: ', relative_dist_bw_spines
+
+        self.spine_dict.update({'sneck_'+pathway : [h.Section(name='sneck_'+pathway+'[%d]' % i) for i in xrange(len(dend_loc))]}) 
+        self.spine_dict.update({'shead_'+pathway : [h.Section(name='shead_'+pathway+'[%d]' % i) for i in xrange(len(dend_loc))]})
+        
+
+        #print "e_Leak_pyr", self.dendrite.e_Leak_pyr
+        #print "gmax_Leak_pyr", self.dendrite.gmax_Leak_pyr
+        #print "cm", self.dendrite.cm
+
+        for i in range(len(dend_loc)):
+
+            ndend, xloc = dend_loc[i]
+            exec("dend=h." + ndend)
+
+
+            self.spine_dict['sneck_'+pathway][i].L = h.sneck_len # 1.58
+            self.spine_dict['sneck_'+pathway][i].diam = h.sneck_diam # 0.077
+            self.spine_dict['shead_'+pathway][i].L = h.shead_len #0.5 
+            self.spine_dict['shead_'+pathway][i].diam = h.shead_diam #0.5
+
+            self.spine_dict['sneck_'+pathway][i].insert('Leak_pyr')
+            self.spine_dict['sneck_'+pathway][i].e_Leak_pyr = dend.e_Leak_pyr
+            self.spine_dict['sneck_'+pathway][i].gmax_Leak_pyr = dend.gmax_Leak_pyr
+            self.spine_dict['sneck_'+pathway][i].Ra = 100
+            self.spine_dict['sneck_'+pathway][i].cm = dend.cm
+            # self.sneck[i].insert('cad_mod_for_ltp')
+            # h.taur_cad_mod_for_ltp = 14
+
+            self.spine_dict['shead_'+pathway][i].insert('Leak_pyr')
+            self.spine_dict['shead_'+pathway][i].e_Leak_pyr = dend.e_Leak_pyr
+            self.spine_dict['shead_'+pathway][i].gmax_Leak_pyr = dend.gmax_Leak_pyr
+            self.spine_dict['shead_'+pathway][i].Ra = 100
+            self.spine_dict['shead_'+pathway][i].cm = dend.cm
+            # self.shead[i].insert('cad_mod_for_ltp')
+            # h.taur_cad_mod_for_ltp = 14
+            # h.depth_cad_mod_for_ltp = h.shead_diam/2
+
+
+            #self.sneck[i].connect(self.dendrite(xloc + (i*relative_dist_bw_spines)), 0)
+            self.spine_dict['sneck_'+pathway][i].connect(dend(xloc), 0)
+            self.spine_dict['shead_'+pathway][i].connect(self.spine_dict['sneck_'+pathway][i](1), 0)
+			
+
+    def set_ampa_nmda_multiple_loc_theta(self, dend_loc, pathway):
+        """Used in ObliqueIntegrationTest"""
+
+        # ndend, xloc, loc_type = dend_loc
+
+        # exec("self.dendrite=h." + ndend)
+
+
+        for i in range(len(dend_loc)):
+
+
+            if self.AMPA_name: # if this is given, the AMPA model defined in a mod file is used, else the built in Exp2Syn
+                exec("self.synapse_lists[\'ampa_list_"+ pathway + "\'][i] = h."+self.AMPA_name+"(0.5, sec=self.spine_dict[\'shead_"+pathway+"\'][i])")
+            else: 
+                self.synapse_lists['ampa_list_'+pathway][i] = h.Exp2Syn(0.5, sec=self.spine_dict['shead_'+pathway][i])
+                self.synapse_lists['ampa_list_'+pathway][i].tau1 = self.AMPA_tau1
+                self.synapse_lists['ampa_list_'+pathway][i].tau2 = self.AMPA_tau2
+                #print 'The built in Exp2Syn is used as the AMPA component. Tau1 = ', self.AMPA_tau1, ', Tau2 = ', self.AMPA_tau2 , '.'
+
+            if self.NMDA_name: # if this is given, the NMDA model defined in a mod file is used, else the default NMDA model of HippoUnit
+                # exec("self.nmda_list[i] = h."+self.NMDA_name+"(0.5, sec=self.shead[i])")
+                exec("self.synapse_lists[\'nmda_list_"+ pathway + "\'][i] = h."+self.NMDA_name+"(0.5, sec=self.spine_dict[\'shead_"+pathway+"\'][i])")
+            else:
+                try:
+                    exec("self.synapse_lists[\'nmda_list_"+ pathway + "\'][i] = h."+self.default_NMDA_name+"(0.5, sec=self.spine_dict[\'shead_"+pathway+"\'][i])")
+                except:
+                    h.nrn_load_dll(self.default_NMDA_path + self.libpath)
+                    # neuron.load_mechanisms(self.default_NMDA_path)
+                    exec("self.synapse_lists[\'nmda_list_"+ pathway + "\'][i] = h."+self.default_NMDA_name+"(0.5, sec=self.spine_dict[\'shead_"+pathway+"\'][i])")
+
+        # self.ndend = ndend
+        # self.xloc = xloc
+
+
+    def set_netstim_netcon_multiple_loc_theta(self, dend_loc, AMPA_weight, pathway, interval_bw_trains, interval_bw_stimuli_in_train, num_trains, num_stimuli_in_train):
+        """Used in ObliqueIntegrationTest"""
+
+
+        for j in range(num_trains):
+            for i in range(len(dend_loc)):
+                """
+                self.ns_list[j][i] = h.NetStim()
+                self.ns_list[j][i].number = 5
+                self.ns_list[j][i].interval = 10     # ms 
+                self.ns_list[j][i].start = self.start + j * interval_bw_trains 
+
+                self.ampa_nc_list[j][i] = h.NetCon(self.ns_list[j][i], self.ampa_list[i], 0, 0, 0)
+                self.nmda_nc_list[j][i] = h.NetCon(self.ns_list[j][i], self.nmda_list[i], 0, 0, 0)
+
+                self.ampa_nc_list[j][i].weight[0] = AMPA_weight
+                self.nmda_nc_list[j][i].weight[0] =AMPA_weight/self.AMPA_NMDA_ratio
+                """
+                self.synapse_lists['ns_list_'+pathway][j][i] = h.NetStim()
+                self.synapse_lists['ns_list_'+pathway][j][i].number = num_stimuli_in_train
+                self.synapse_lists['ns_list_'+pathway][j][i].interval = interval_bw_stimuli_in_train    # ms 
+                self.synapse_lists['ns_list_'+pathway][j][i].start = self.start + j * interval_bw_trains 
+
+                self.synapse_lists['ampa_nc_list_'+pathway][j][i] = h.NetCon(self.synapse_lists['ns_list_'+pathway][j][i], self.synapse_lists['ampa_list_'+pathway][i], 0, 0, 0)
+                self.synapse_lists['nmda_nc_list_'+pathway][j][i] = h.NetCon(self.synapse_lists['ns_list_'+pathway][j][i], self.synapse_lists['nmda_list_'+pathway][i], 0, 0, 0)
+
+                self.synapse_lists['ampa_nc_list_'+pathway][j][i].weight[0] = AMPA_weight
+                self.synapse_lists['nmda_nc_list_'+pathway][j][i].weight[0] =AMPA_weight/self.AMPA_NMDA_ratio
+
+
+    def activate_theta_stimuli(self, dend_loc, AMPA_weight, pathway, interval_bw_trains, interval_bw_stimuli_in_train, num_trains, num_stimuli_in_train):
+
+
+        # self.ampa_list = [None] * len(dend_loc)
+        # self.nmda_list = [None] * len(dend_loc)
+        # self.ns_list = [None] * len(dend_loc)
+        # self.ampa_nc_list = [None] * len(dend_loc)
+        # self.nmda_nc_list = [None] * len(dend_loc)
+        # self.ampa_nc_list = [[None]*len(dend_loc) for i in range(num_of_trains)]
+        # self.nmda_nc_list = [[None]*len(dend_loc) for i in range(num_of_trains)]
+        # self.ns_list = [[None]*len(dend_loc) for i in range(num_of_trains)]
+        self.synapse_lists.update({'ampa_list_' + pathway : [None] * len(dend_loc),
+                            'nmda_list_' + pathway : [None] * len(dend_loc),
+                            'ampa_nc_list_' + pathway : [[None]*len(dend_loc) for i in range(num_trains)],
+                            'nmda_nc_list_' + pathway : [[None]*len(dend_loc) for i in range(num_trains)],
+                            'ns_list_' + pathway : [[None]*len(dend_loc) for i in range(num_trains)] 
+                            })  # if synapses of one of the pathways exist already, the dictionary shouldn't be overwritten, but new items are added, therefore 'update' is used. 
+
+        # self.block_Na()
+
+        self.create_spine_multiple_loc_theta(dend_loc, pathway)
+        self.set_ampa_nmda_multiple_loc_theta(dend_loc, pathway)
+        self.set_netstim_netcon_multiple_loc_theta(dend_loc, AMPA_weight, pathway, interval_bw_trains, interval_bw_stimuli_in_train, num_trains, num_stimuli_in_train)
+
+
+        """Blocking AMPA component"""
+        """
+        # self.ampa_nc.weight[0] = 0.0
+        for j in range(num_of_trains):
+            for i in range(len(dend_loc)):
+                self.ampa_nc_list[j][i].weight[0] = 0.0
+        """
+
+
+
+    def run_simulation(self, dend_loc, recording_loc, tstop):
+        """Used in PathwayInteraction Test"""
+
+        (rec_ndend, xloc), distance = recording_loc
+
+        exec("dendrite=h." + rec_ndend)
+
+        if self.cvode_active:
+            h.cvode_active(1)
+        else:
+            h.cvode_active(0)
+
+        dend_sections = []
+
+        for d in dend_loc:
+            dend_sections.append(d[0])  
+
+        occurence_of_dend_sections = collections.Counter(dend_sections)    # it is possible that on one dendrite there will be more synapses at different segmenst, this is needed to be taken into account, when recalculating F factor 
+
+        for ndend, num in occurence_of_dend_sections.iteritems():
+
+            dend_num = ndend.split('[')[1]  # to get the number of the dendrite (eg. 80 from dendrite[80])
+            dend_num = int(dend_num[:-1])
+            # print dend_num
+
+            exec("dend=h." + ndend)
+            #correcting F factor on the given dendrite taking the number of added spines into consideration
+            length = dend.L
+
+            # print "cm before", self.dendrite.cm
+            h.F_factor_correction_with_spines(dend_num, num/length) # spine density = num of spines / length of dendritic section
+            #print "cm after", self.dendrite.cm
+
+        exec("self.sect_loc=h." + str(self.soma)+"("+str(0.5)+")")
+
+
+
+        # initiate recording
+        rec_t = h.Vector()
+        rec_t.record(h._ref_t)
+
+        rec_v = h.Vector()
+        rec_v.record(self.sect_loc._ref_v)
+
+        rec_v_dend = h.Vector()
+        rec_v_dend.record(dendrite(xloc)._ref_v)
+
+        '''
+        rec_i_VClamp = h.Vector()
+        rec_i_VClamp.record(self.VClamp_stim._ref_i)
+
+        rec_v_shead = h.Vector()
+        rec_v_shead.record(self.shead(0.5)._ref_v)
+
+        rec_i_NMDA = h.Vector()
+        rec_i_NMDA.record(self.nmda._ref_i)
+
+        rec_ica_NMDA = h.Vector()
+        rec_ica_NMDA.record(self.nmda._ref_ica)
+
+        rec_g_NMDA = h.Vector()
+        rec_g_NMDA.record(self.nmda._ref_g)
+        '''
+        h.stdinit()
+        dt = 0.025
+        h.dt = dt
+        h.steps_per_ms = 1 / dt
+        h.v_init = self.v_init
+        h.celsius = self.celsius
+        h.init()
+        h.tstop = tstop # 1600
+        h.run()
+        # get recordings
+        t = numpy.array(rec_t)
+        v = numpy.array(rec_v)
+        v_dend = numpy.array(rec_v_dend)
+        # i_VClamp = numpy.array(rec_i_VClamp)
+        '''
+        v_shead = numpy.array(rec_v_shead)
+        i_NMDA = numpy.array(rec_i_NMDA)
+        ica_NMDA = numpy.array(rec_ica_NMDA)
+        g_NMDA = numpy.array(rec_g_NMDA)
+        '''
+
+        """
+        print(self.VClamp_stim.gain)
+        print(self.VClamp_stim.rstim)
+        print(self.VClamp_stim.tau1)
+        print(self.VClamp_stim.tau2)
+        print(self.VClamp_stim.e0)
+        print(self.VClamp_stim.vo0)
+        """
+
+        return t, v, v_dend  # , i_VClamp  , v_shead, i_NMDA, ica_NMDA, g_NMDA
+
+    def num_of_possible_locations(self):
+
+        self.initialise()
+        locations = [] 
+
+        if self.template_name is not None:
+            exec('dendrites=h.testcell.' + self.SecList)
+
+        else:
+             exec('dendrites=h.' + self.SecList)
+
+        dendrites = list(dendrites)
+
+        for sec in dendrites:
+            for seg in sec:
+                locations.append([sec.name(), seg.x])
+
+        return len(locations)
+
+class ModelLoader_Spine_syn_CA1_burst(ModelLoader_Spine_syn):
+
+    def __init__(self, name="model", mod_files_path=None):
+        """ Constructor. """
+        """ This class should be used with Jupyter notebooks"""
+        super(ModelLoader_Spine_syn_CA1_burst, self).__init__(name=name, mod_files_path=mod_files_path)
+
+
+        self.start=400
+
+        self.SecList = None
+
+    def run_syn(self, dend_loc, weight):
+        """Used in ObliqueIntegrationTest"""
+
+        # self.ampa_list = [None] * number
+        # self.nmda_list = [None] * number
+        # self.ns_list = [None] * number
+        # self.ampa_nc_list = [None] * number
+        # self.nmda_nc_list = [None] * number
+
+        ndend, xloc = dend_loc
+
+        dend_num = ndend.split('[')[1]  # to get the number of the dendrite (eg. 80 from dendrite[80])
+        dend_num = int(dend_num[:-1])
+        # print dend_num
+
+        self.initialise()
+
+        exec("self.dendrite=h." + ndend)
+
+        if self.cvode_active:
+            h.cvode_active(1)
+        else:
+            h.cvode_active(0)
+
+        '''
+        #correcting F factor on the given dendrite taking the number of added spines into consideration
+        length = self.dendrite.L
+
+        # print "cm before", self.dendrite.cm
+        h.F_factor_correction_with_spines(dend_num, 1/length) # spine density = num of spines / length of dendritic section
+        #print "cm after", self.dendrite.cm
+        '''
+
+
+        self.create_single_spine(dend_loc)
+
+        self.set_ampa_nmda(dend_loc)
+
+        self.set_netstim_netcon(weight)
+
+
+        exec("self.sect_loc=h." + str(self.soma)+"("+str(0.5)+")")
+
+        # initiate recording
+        rec_t = h.Vector()
+        rec_t.record(h._ref_t)
+
+        rec_v = h.Vector()
+        rec_v.record(self.sect_loc._ref_v)
+
+        rec_v_dend = h.Vector()
+        # rec_v_dend.record(self.shead[0](0.5)._ref_v)
+        rec_v_dend.record(self.dendrite(self.xloc)._ref_v)
+
+        h.stdinit()
+
+        dt = 0.025
+        h.dt = dt
+        h.steps_per_ms = 1 / dt
+        h.v_init = self.v_init #-80
+
+        h.celsius = self.celsius
+        h.init()
+        h.tstop =650
+        h.run()
+
+        # get recordings
+        t = numpy.array(rec_t)
+        v = numpy.array(rec_v)
+        v_dend = numpy.array(rec_v_dend)
+
+        return t, v, v_dend
+
+
+    def run_simulation(self, dend_loc, recording_loc, tstop):
+        """Used in PathwayInteraction Test"""
+
+        (rec_ndend, xloc), distance = recording_loc
+
+        exec("dendrite=h." + rec_ndend)
+
+        if self.cvode_active:
+            h.cvode_active(1)
+        else:
+            h.cvode_active(0)
+
+        dend_sections = []
+        '''
+        for d in dend_loc:
+            dend_sections.append(d[0])  
+
+        occurence_of_dend_sections = collections.Counter(dend_sections)    # it is possible that on one dendrite there will be more synapses at different segmenst, this is needed to be taken into account, when recalculating F factor 
+
+        for ndend, num in occurence_of_dend_sections.iteritems():
+
+            dend_num = ndend.split('[')[1]  # to get the number of the dendrite (eg. 80 from dendrite[80])
+            dend_num = int(dend_num[:-1])
+            # print dend_num
+
+            exec("dend=h." + ndend)
+            #correcting F factor on the given dendrite taking the number of added spines into consideration
+            length = dend.L
+
+            # print "cm before", self.dendrite.cm
+            h.F_factor_correction_with_spines(dend_num, num/length) # spine density = num of spines / length of dendritic section
+            #print "cm after", self.dendrite.cm
+        '''
+
+        exec("self.sect_loc=h." + str(self.soma)+"("+str(0.5)+")")
+
+
+
+        # initiate recording
+        rec_t = h.Vector()
+        rec_t.record(h._ref_t)
+
+        rec_v = h.Vector()
+        rec_v.record(self.sect_loc._ref_v)
+
+        rec_v_dend = h.Vector()
+        rec_v_dend.record(dendrite(xloc)._ref_v)
+
+        h.stdinit()
+        dt = 0.025
+        h.dt = dt
+        h.steps_per_ms = 1 / dt
+        h.v_init = self.v_init
+        h.celsius = self.celsius
+        h.init()
+        h.tstop = tstop # 1600
+        h.run()
+        # get recordings
+        t = numpy.array(rec_t)
+        v = numpy.array(rec_v)
+        v_dend = numpy.array(rec_v_dend)
+        # i_VClamp = numpy.array(rec_i_VClamp)
+
+
+
+        return t, v, v_dend  # , i_VClamp  , v_shead, i_NMDA, ica_NMDA, g_NMDA
+
