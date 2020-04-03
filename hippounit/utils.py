@@ -63,8 +63,12 @@ class ModelLoader(sciunit.Model,
         self.c_step_stop = 0.000004
         self.c_minmax = numpy.array([0.00004, 0.04])
 
+        self.SecList_name= None
         self.ObliqueSecList_name = None
         self.TrunkSecList_name = None
+        self.ApicalSecList_name = None
+        self.BasalSecList_name = None
+        self.TuftSecList_name = None
         self.dend_loc = []  #self.dend_loc = [['dendrite[80]',0.27],['dendrite[80]',0.83],['dendrite[54]',0.16],['dendrite[54]',0.95],['dendrite[52]',0.38],['dendrite[52]',0.83],['dendrite[53]',0.17],['dendrite[53]',0.7],['dendrite[28]',0.35],['dendrite[28]',0.78]]
         self.dend_locations = collections.OrderedDict()
         self.NMDA_name = None
@@ -225,6 +229,7 @@ class ModelLoader(sciunit.Model,
         return t, v
 
     def inject_current_record_respons_multiple_loc(self, amp, delay, dur, section_stim, loc_stim, dend_locations):
+       # Modified: An if condition has been added to deal with the different form of dendritic locatinr returned by The          ProvidesRecordingLocationsOnTrunk and the ProvidesRandomDendriticLocations capabilities. 
 
         self.initialise()
 
@@ -267,10 +272,19 @@ class ModelLoader(sciunit.Model,
             #print self.dend_loc[i]
         '''
         #print dend_locations
-        for key, value in dend_locations.items():
-            for i in range(len(dend_locations[key])):
-                exec("self.dend_loc_rec.append(h." + str(dend_locations[key][i][0])+"("+str(dend_locations[key][i][1])+"))")
+        # The ProvidesRecordingLocationsOnTrunk and the ProvidesRandomDendriticLocations capabilities returns the dendritic locations in different format. 
+
+        if isinstance(dend_locations, list):
+            for locs in dend_locations:
+                exec("self.dend_loc_rec.append(h." + str(locs[0])+"("+str(locs[1])+"))")
                 rec_v.append(h.Vector())
+
+        else:
+            for key, value in dend_locations.items():
+                for i in range(len(dend_locations[key])):
+                    exec("self.dend_loc_rec.append(h." + str(dend_locations[key][i][0])+"("+str(dend_locations[key][i][1])+"))")
+                    rec_v.append(h.Vector())
+
 
         for i in range(len(self.dend_loc_rec)):
             rec_v[i].record(self.dend_loc_rec[i]._ref_v)
@@ -296,13 +310,21 @@ class ModelLoader(sciunit.Model,
             v.append(numpy.array(rec_v[i]))
         '''
 
+        # The ProvidesRecordingLocationsOnTrunk and the ProvidesRandomDendriticLocations capabilities returns the dendritic locations in different format. This function's return form depends on which format it gets.
+
         i = 0
-        for key, value in dend_locations.items():
-            v[key] = collections.OrderedDict()
-            for j in range(len(dend_locations[key])):
-                loc_key = (dend_locations[key][j][0],dend_locations[key][j][1]) # list can not be a key, but tuple can
-                v[key][loc_key] = numpy.array(rec_v[i])     # the list that specifies dendritic location will be a key too.
+        if isinstance(dend_locations, list):
+            for loc in dend_locations:
+                loc_key = (loc[0], loc[1]) # list can not be a key, but tuple can
+                v[loc_key] = numpy.array(rec_v[i])     # the list that specifies dendritic location will be a key too.
                 i+=1
+        else:
+            for key, value in dend_locations.items():
+                v[key] = collections.OrderedDict()
+                for j in range(len(dend_locations[key])):
+                    loc_key = (dend_locations[key][j][0],dend_locations[key][j][1]) # list can not be a key, but tuple can
+                    v[key][loc_key] = numpy.array(rec_v[i])     # the list that specifies dendritic location will be a key too.
+                    i+=1
 
         return t, v_stim, v
 
@@ -393,24 +415,55 @@ class ModelLoader(sciunit.Model,
         #print actual_distances
         return locations, actual_distances
 
-    def get_random_locations(self, num, seed, dist_range):
+    def get_random_locations(self, dendritic_type, num, seed, dist_range):
 
-        if self.TrunkSecList_name is None and not self.find_section_lists:
-            raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.TrunkSecList_name=\"trunk\" or set model.find_section_lists to True)")
+        # modified to make it more general and useable for any of the main dendritic types
+       # TODO: modify original tests to adapt to this, and check if everything works fine (AND PathwayInteractionTest)
+
+        if dendritic_type == 'basal':
+            SecList_name = self.BasalSecList_name
+
+            if SecList_name is None:    # find_section_list can not be used for basal dendrites, as it classifies apical dendrites into subtypes
+                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.BasalSecList_name=\"trunk\" or set model.find_section_lists to True)")
+
+        elif dendritic_type == 'apical':
+            SecList_name = self.ApicalSecList_name
+
+            if SecList_name is None: # find_section_list can not be used for basal dendrites, as it classifies apical dendrites into subtypes
+                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.ApicalSecList_name=\"trunk\" or set model.find_section_lists to True)")
+
+        elif dendritic_type == 'trunk':
+            SecList_name = self.TrunkSecList_name
+
+            if SecList_name is None and not self.find_section_lists:
+                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.TrunkSecList_name=\"trunk\" or set model.find_section_lists to True)")
+
+        elif dendritic_type == 'tuft':
+            SecList_name = self.TuftSecList_name
+
+            if SecList_name is None and not self.find_section_lists:
+                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.TuftkSecList_name=\"trunk\" or set model.find_section_lists to True)")
+
+        elif dendritic_type == 'oblique':
+            SecList_name = self.ObliqueSecList_name
+
+            if SecList_name is None and not self.find_section_lists:
+                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.ObliqueSecList_name=\"trunk\" or set model.find_section_lists to True)")
+
 
         locations=[]
-        locations_distances = {}
+        locations_distances = collections.OrderedDict()
 
-        if self.TrunkSecList_name is not None:
+        if SecList_name is not None:
             self.initialise()
 
             if self.template_name is not None:
-                exec('self.trunk=h.testcell.' + self.TrunkSecList_name)
+                exec('self.dendrites=h.testcell.' + SecList_name)
 
             else:
-                exec('self.trunk=h.' + self.TrunkSecList_name)
+                exec('self.dendrites=h.' + SecList_name)
 
-        if self.find_section_lists:
+        if self.find_section_lists and (dendritic_type == 'tuft' or dendritic_type == 'trunk' or dendritic_type == 'oblique'): # The classification is only for apical dendrites, (not basal) 
 
             self.initialise()
 
@@ -420,19 +473,28 @@ class ModelLoader(sciunit.Model,
             apical_trunk_isections, apical_tuft_isections, oblique_isections = self.classify_apical_point_sections(self.icell)
             apical_trunk_isections = sorted(apical_trunk_isections) # important to keep reproducability
 
-            self.trunk = []
-            for i in range(len(apical_trunk_isections)):
-                exec('self.sec = h.testcell.apic[' + str(apical_trunk_isections[i]) + ']')
-                self.trunk.append(self.sec)
+            self.dendrites = []
+            if dendritic_type == 'trunk':
+                for i in range(len(apical_trunk_isections)):
+                    exec('self.sec = h.testcell.apic[' + str(apical_trunk_isections[i]) + ']')
+                    self.dendrites.append(self.sec)
+            elif dendritic_type == 'tuft':
+                for i in range(len(apical_tuft_isections)):
+                    exec('self.sec = h.testcell.apic[' + str(apical_tuft_isections[i]) + ']')
+                    self.dendrites.append(self.sec)
+            elif dendritic_type == 'oblique':
+                for i in range(len(oblique_isections)):
+                    exec('self.sec = h.testcell.apic[' + str(oblique_isections[i]) + ']')
+                    self.dendrites.append(self.sec)
         else:
-            self.trunk = list(self.trunk)
+            self.dendrites = list(self.dendrites)
 
         kumm_length_list = []
         kumm_length = 0
         num_of_secs = 0
 
 
-        for sec in self.trunk:
+        for sec in self.dendrites:
             #print sec.L
             num_of_secs += sec.nseg
             kumm_length += sec.L
@@ -441,7 +503,7 @@ class ModelLoader(sciunit.Model,
         #print num_of_secs
 
         if num > num_of_secs:
-            for sec in self.trunk:
+            for sec in self.dendrites:
                 h(self.soma + ' ' +'distance()')
                 h('access ' + sec.name())
                 for seg in sec:
@@ -474,16 +536,16 @@ class ModelLoader(sciunit.Model,
                             #print norm_kumm_length_list[i]
                             seg_loc = (rand - norm_kumm_length_list[i-1]) / (norm_kumm_length_list[i] - norm_kumm_length_list[i-1])
                             #print 'seg_loc', seg_loc
-                            segs = [seg.x for seg in self.trunk[i]]
-                            d_seg = [abs(seg.x - seg_loc) for seg in self.trunk[i]]
+                            segs = [seg.x for seg in self.dendrites[i]]
+                            d_seg = [abs(seg.x - seg_loc) for seg in self.dendrites[i]]
                             min_d_seg = numpy.argmin(d_seg)
                             segment = segs[min_d_seg]
                             #print 'segment', segment
                             h(self.soma + ' ' +'distance()')
-                            h('access ' + self.trunk[i].name())
-                            if [self.trunk[i].name(), segment] not in locations and h.distance(segment) >= dist_range[0] and h.distance(segment) < dist_range[1]:
-                                locations.append([self.trunk[i].name(), segment])
-                                locations_distances[self.trunk[i].name(), segment] = h.distance(segment)
+                            h('access ' + self.dendrites[i].name())
+                            if [self.dendrites[i].name(), segment] not in locations and h.distance(segment) >= dist_range[0] and h.distance(segment) < dist_range[1]:
+                                locations.append([self.dendrites[i].name(), segment])
+                                locations_distances[self.dendrites[i].name(), segment] = h.distance(segment)
                 _num_ = num - len(locations)
                 #print '_num_', _num_
                 seed += 10

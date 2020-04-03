@@ -1,0 +1,15 @@
+{
+  "stimulus": {
+  "delay" : 500,
+  "duration": 1000,
+  "amplitude" : 1.0
+},
+"apical_recording": {
+  "distances": [50, 150],
+  "tolerance": 50
+},
+"basal_recording": {
+  "distances": [20, 50],
+  "tolerance": 15
+}
+}
