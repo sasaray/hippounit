@@ -5,7 +5,7 @@ standard_library.install_aliases()
 #from builtins import str
 from builtins import range
 from quantities.quantity import Quantity
-from quantities import mV, nA
+from quantities import mV, nA, V, ms
 import sciunit
 from sciunit import Test,Score
 try:
@@ -124,7 +124,7 @@ class BackpropagatingAPTest_BasketCell(Test):
 
         description = "Tests efficacy  and shape of back-propagating action potentials on the basal and apical dendrites of basket cells."
 
-    score_type = scores.ZScore_backpropagatingAP
+    score_type = scores.ZScore_backpropagatingAP_BasketCell
 
     def format_data(self, observation):
         for key, val in list(observation.items()):
@@ -197,113 +197,488 @@ class BackpropagatingAPTest_BasketCell(Test):
 
         return traces
 
-    def extract_somatic_spiking_features(self, traces, delay, duration):
+    def extract_features_by_eFEL(self, traces_soma_and_apical, traces_soma_and_basal, delay, duration):
+
 
         # soma
+        trace_soma = {}
+        traces_soma=[]
+        trace_soma['T'] = traces_soma_and_apical['T']
+        trace_soma['V'] = traces_soma_and_apical['v_stim']
+        trace_soma['stim_start'] = [delay]
+        trace_soma['stim_end'] = [delay + duration]
+        traces_soma.append(trace_soma)
+
+
+        traces_results_soma = efel.getFeatureValues(traces_soma, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+   
+        #apical
+        traces_results_apical = {} 
+        for key, value in traces_soma_and_apical['v_rec'].items():
+            trace = {}
+            traces_for_efel=[]
+            trace['T'] = traces_soma_and_apical['T']
+            trace['V'] = value
+            trace['stim_start'] = [delay]
+            trace['stim_end'] = [delay + duration]
+            traces_for_efel.append(trace)
+
+
+            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
+            traces_results_apical[key] = traces_results
+
+        #basal
+        traces_results_basal = {} 
+        for key, value in traces_soma_and_basal['v_rec'].items():
+            trace = {}
+            traces_for_efel=[]
+            trace['T'] = traces_soma_and_basal['T']
+            trace['V'] = value
+            trace['stim_start'] = [delay]
+            trace['stim_end'] = [delay + duration]
+            traces_for_efel.append(trace)
+
+
+            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
+            traces_results_basal[key] = traces_results 
+
+
+       #Testing
+        '''
         trace = {}
         traces_for_efel=[]
-        trace['T'] = traces['T']
-        trace['V'] = traces['v_stim']
+        trace['T'] = traces_soma_and_basal['T']
+        trace['V'] = traces_soma_and_basal['v_rec'][('CA1_PC_cAC_sig[0].dend[3]', 0.16666666666666666)] 
         trace['stim_start'] = [delay]
         trace['stim_end'] = [delay + duration]
         traces_for_efel.append(trace)
-
-        # trunk locations
-        '''
-        for key in traces['v_rec']:
-            for k in traces['v_rec'][key]:
-                trace = {}
-                trace['T'] = traces['T']
-                trace['V'] = traces['v_rec'][key][k]
-                trace['stim_start'] = [delay]
-                trace['stim_end'] = [delay + duration]
-                traces_for_efel.append(trace)
+        results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
+        print('FIIIGYUUUUUUU', results[0]['AP_duration_half_width'])
+        plt.figure()
+        plt.plot(trace['T'],trace['V'])
         '''
 
-        efel.setDoubleSetting('interp_step', 0.025)
-        efel.setDoubleSetting('DerivativeThreshold', 40.0)
 
-        traces_results = efel.getFeatureValues(traces_for_efel, ['inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+        return traces_results_soma, traces_results_apical, traces_results_basal
 
-        return traces_results
 
-    def extract_amplitudes(self, traces, traces_results, actual_distances):
+    def get_time_indices_befor_and_after_somatic_AP(self, efel_features_somatic, traces_soma_and_apical):
 
-        #soma_AP_begin_indices = traces_results[0]['AP_begin_indices']
 
-        soma_AP_begin_time = traces_results[0]['AP_begin_time']
+        soma_AP_begin_time = efel_features_somatic[0]['AP_begin_time']
         #soma_inv_first_ISI = traces_results[0]['inv_first_ISI']
-        soma_first_ISI = traces_results[0]['doublet_ISI'][0]
+        soma_first_ISI = efel_features_somatic[0]['doublet_ISI'][0]
         #print soma_AP_begin_time[0], soma_AP_begin_time[0]-1
         #print traces_results[0]['inv_first_ISI'], soma_first_ISI
-        s_indices_AP1 = numpy.where(traces['T'] >= (soma_AP_begin_time[0]-1.0))
+        s_indices_AP1 = numpy.where(traces_soma_and_apical['T'] >= (soma_AP_begin_time[0]-1.0))
         if 10 < soma_first_ISI:
             plus = 10
         else:
             plus = soma_first_ISI-3
-        e_indices_AP1 = numpy.where(traces['T'] >= (soma_AP_begin_time[0]+plus))
+        e_indices_AP1 = numpy.where(traces_soma_and_apical['T'] >= (soma_AP_begin_time[0]+plus))
         start_index_AP1 = s_indices_AP1[0][0]
         end_index_AP1 = e_indices_AP1[0][0]
         #print start_index_AP1
         #print end_index_AP1
 
-        s_indices_APlast = numpy.where(traces['T'] >= soma_AP_begin_time[-1]-1.0)
-        e_indices_APlast = numpy.where(traces['T'] >= soma_AP_begin_time[-1]+10)
+        s_indices_APlast = numpy.where(traces_soma_and_apical['T'] >= soma_AP_begin_time[-1]-1.0)
+        e_indices_APlast = numpy.where(traces_soma_and_apical['T'] >= soma_AP_begin_time[-1]+10)
         start_index_APlast = s_indices_APlast[0][0]
         end_index_APlast = e_indices_APlast[0][0]
+        return [start_index_AP1, end_index_AP1, start_index_APlast, end_index_APlast]  
 
-        features = collections.OrderedDict()
+    def plot_AP1_APlast(self, time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal):
 
-        for key, value in traces['v_rec'].items():
-            features[key] = collections.OrderedDict()
-            for k, v in traces['v_rec'][key].items():
-                features[key][k] = collections.OrderedDict()
+        start_index_AP1, end_index_AP1, start_index_APlast, end_index_APlast = time_indices_befor_and_after_somatic_AP
 
-                features[key][k]['AP1_amp']= float(numpy.amax(traces['v_rec'][key][k][start_index_AP1:end_index_AP1]) - traces['v_rec'][key][k][start_index_AP1])*mV
-                features[key][k]['APlast_amp']= float(numpy.amax(traces['v_rec'][key][k][start_index_APlast:end_index_APlast]) - traces['v_rec'][key][k][start_index_APlast])*mV
-                features[key][k]['actual_distance'] = actual_distances[k]
-        '''
-        plt.figure()
-        plt.plot(traces['T'],traces['v_stim'], 'r', label = 'soma')
-        plt.plot(traces['T'][start_index_AP1],traces['v_stim'][start_index_AP1], 'o', label = 'soma')
-        plt.plot(traces['T'][end_index_AP1],traces['v_stim'][end_index_AP1], 'o', label = 'soma')
-        plt.plot(traces['T'][start_index_APlast],traces['v_stim'][start_index_APlast], 'o', label = 'soma')
-        '''
-        # zoom to fist AP
-        plt.figure()
-        plt.plot(traces['T'],traces['v_stim'], 'r', label = 'soma')
-        for key, value in traces['v_rec'].items():
-            for k, v in traces['v_rec'][key].items():
-                #plt.plot(traces['T'],traces['v_rec'][i], label = dend_locations[i][0]+'('+str(dend_locations[i][1])+') at '+str(self.config['recording']['distances'][i])+' um')
-                #plt.plot(traces['T'],traces['v_rec'][key], label = dend_locations[key][0]+'('+str(dend_locations[key][1])+') at '+str(key)+' um')
-                plt.plot(traces['T'],traces['v_rec'][key][k], label = k[0]+'('+str(k[1])+') at '+str(actual_distances[k])+' um')
-
-        plt.xlabel('time (ms)')
-        plt.ylabel('membrane potential (mV)')
-        plt.title('First AP')
-        plt.xlim(traces['T'][start_index_AP1], traces['T'][end_index_AP1])
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        # zoom to first and last AP apical
+        fig1, axs1 = plt.subplots(1,2)
+        plt.subplots_adjust(wspace = 0.4)
+        axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r')
+        axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_apical['v_rec'].items():
+            axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key])
+            axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+        axs1[0].set_xlabel('time (ms)')
+        axs1[0].set_ylabel('membrane potential (mV)')
+        axs1[0].set_title('First AP')
+        axs1[0].set_xlim(traces_soma_and_apical['T'][start_index_AP1], traces_soma_and_apical['T'][end_index_AP1])
+        axs1[1].set_xlabel('time (ms)')
+        axs1[1].set_ylabel('membrane potential (mV)')
+        axs1[1].set_title('Last AP')
+        axs1[1].set_xlim(traces_soma_and_apical['T'][start_index_APlast], traces_soma_and_apical['T'][end_index_APlast])
+        lgd=axs1[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        fig1.suptitle('Apical dendrites')
         if self.save_all:
-            plt.savefig(self.path_figs + 'AP1_traces'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(self.path_figs + 'First_and_last_AP_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-        # zom to last AP
-        plt.figure()
-        plt.plot(traces['T'],traces['v_stim'], 'r', label = 'soma')
-        for key, value in traces['v_rec'].items():
-            for k, v in traces['v_rec'][key].items():
-                #plt.plot(traces['T'],traces['v_rec'][i], label = dend_locations[i][0]+'('+str(dend_locations[i][1])+') at '+str(self.config['recording']['distances'][i])+' um')
-                #plt.plot(traces['T'],traces['v_rec'][key], label = dend_locations[key][0]+'('+str(dend_locations[key][1])+') at '+str(key)+' um')
-                plt.plot(traces['T'],traces['v_rec'][key][k], label = k[0]+'('+str(k[1])+') at '+str(actual_distances[k])+' um')
-        plt.xlabel('time (ms)')
-        plt.ylabel('membrane potential (mV)')
-        plt.title('Last AP')
-        plt.xlim(traces['T'][start_index_APlast], traces['T'][end_index_APlast])
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        # zoom to first and last AP basal
+        fig2, axs2 = plt.subplots(1,2)
+        plt.subplots_adjust(wspace = 0.4)
+        axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r')
+        axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_basal['v_rec'].items():
+            axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key])
+            axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+        axs2[0].set_xlabel('time (ms)')
+        axs2[0].set_ylabel('membrane potential (mV)')
+        axs2[0].set_title('First AP')
+        axs2[0].set_xlim(traces_soma_and_basal['T'][start_index_AP1], traces_soma_and_basal['T'][end_index_AP1])
+        axs2[1].set_xlabel('time (ms)')
+        axs2[1].set_ylabel('membrane potential (mV)')
+        axs2[1].set_title('Last AP')
+        axs2[1].set_xlim(traces_soma_and_basal['T'][start_index_APlast], traces_soma_and_basal['T'][end_index_APlast])
+        lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        fig2.suptitle('Basal dendrites')
         if self.save_all:
-            plt.savefig(self.path_figs + 'APlast_traces'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(self.path_figs + 'First_and_last_AP_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-        return features
 
+    def extract_prediction_features(self, efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal):
+
+
+        features = {'soma' : { 'AP_amplitude' : numpy.mean(efel_features_somatic[0]['AP_amplitude'])*mV,
+                              'AP_half_duration' : numpy.mean(efel_features_somatic[0]['AP_duration_half_width'])*ms,
+                              'AP_rise_slope' : (numpy.mean(efel_features_somatic[0]['AP_rise_rate'])/1000.0)*V/ms},  # converting from V/s to V/ms 
+                    'apical' : collections.OrderedDict(),
+                    'basal' : collections.OrderedDict()
+                    }  
+
+        features_to_json = {'soma' : { 'AP_amplitude' : str(numpy.mean(efel_features_somatic[0]['AP_amplitude'])*mV),
+                              'AP_half_duration' : str(numpy.mean(efel_features_somatic[0]['AP_duration_half_width'])*ms),
+                              'AP_rise_slope' : str((numpy.mean(efel_features_somatic[0]['AP_rise_rate'])/1000.0)*V/ms)},  # converting from V/s to V/ms 
+                    'apical' :collections.OrderedDict(),
+                    'basal' :collections.OrderedDict()
+                    } 
+
+        for key, value in efel_features_apical.items():
+            features['apical'].update({key :{ 'distance' : apical_locations_distances[key], 
+                                              'AP1_amplitude' : value[0]['AP_amplitude'][0]*mV,
+                                              'AP1_half_duration' : value[0]['AP_duration_half_width'][0]*ms,
+                                              'AP1_rise_slope' : (value[0]['AP_rise_rate'][0]/1000.0)*V/ms,
+                                              'APlast_amplitude' : value[0]['AP_amplitude'][-1]*mV,
+                                              'APlast_half_duration' : value[0]['AP_duration_half_width'][-1]*ms,
+                                              'APlast_rise_slope' : (value[0]['AP_rise_rate'][-1]/1000.0)*V/ms
+                                             } 
+                                        })
+
+            features_to_json['apical'].update({str(key ):{ 'distance' : apical_locations_distances[key], 
+                                              'AP1_amplitude' : str(value[0]['AP_amplitude'][0]*mV),
+                                              'AP1_half_duration' : str(value[0]['AP_duration_half_width'][0]*ms),
+                                              'AP1_rise_slope' : str((value[0]['AP_rise_rate'][0]/1000.0)*V/ms),
+                                              'APlast_amplitude' : str(value[0]['AP_amplitude'][-1]*mV),
+                                              'APlast_half_duration' : str(value[0]['AP_duration_half_width'][-1]*ms),
+                                              'APlast_rise_slope' : str((value[0]['AP_rise_rate'][-1]/1000.0)*V/ms)
+                                             } 
+                                        })
+
+        for key, value in efel_features_basal.items():
+            features['basal'].update({key : { 'distance' : basal_locations_distances[key],
+                                              'AP1_amplitude' : value[0]['AP_amplitude'][0]*mV,
+                                              'AP1_half_duration' : value[0]['AP_duration_half_width'][0]*ms,
+                                              'AP1_rise_slope' : (value[0]['AP_rise_rate'][0]/1000.0)*V/ms,
+                                              'APlast_amplitude' : value[0]['AP_amplitude'][-1]*mV,
+                                             'APlast_half_duration' : value[0]['AP_duration_half_width'][-1]*ms,
+                                              'APlast_rise_slope' : (value[0]['AP_rise_rate'][-1]/1000.0)*V/ms
+                                            } 
+                                        }) 
+
+
+            features_to_json['basal'].update({str(key) : { 'distance' : basal_locations_distances[key],
+                                              'AP1_amplitude' : str(value[0]['AP_amplitude'][0]*mV),
+                                              'AP1_half_duration' : str(value[0]['AP_duration_half_width'][0]*ms),
+                                              'AP1_rise_slope' : str((value[0]['AP_rise_rate'][0]/1000.0)*V/ms),
+                                              'APlast_amplitude' : str(value[0]['AP_amplitude'][-1]*mV),
+                                             'APlast_half_duration' : str(value[0]['AP_duration_half_width'][-1]*ms),
+                                              'APlast_rise_slope' : str((value[0]['AP_rise_rate'][-1]/1000.0)*V/ms)
+                                            } 
+                                        }) 
+
+        prediction = {'soma' : features['soma'],
+                    'apical' :{},
+                    'basal' :{}
+                    }  
+
+        prediction_to_json = {'soma' : { 'AP_amplitude' : str(features['soma']['AP_amplitude']),
+                                         'AP_half_duration' : str(features['soma']['AP_half_duration']),
+                                         'AP_rise_slope' : str(features['soma']['AP_rise_slope'])},  # converting from V/s to V/ms 
+                              'apical' :collections.OrderedDict(),
+                              'basal' :collections.OrderedDict()
+                              } 
+
+        for dist in distances_apical:
+            AP1_amps = numpy.array([])
+            AP1_half_durs = numpy.array([])
+            AP1_rise_slopes = numpy.array([])
+            APlast_amps = numpy.array([])
+            APlast_half_durs = numpy.array([])
+            APlast_rise_slopes = numpy.array([])
+            prediction['apical'].update({dist : collections.OrderedDict()})
+            prediction_to_json['apical'].update({dist : collections.OrderedDict()})
+
+            for key, value in features['apical'].items():
+ 
+                if value['distance'] >= dist - tolerance_apical and  value['distance'] < dist + tolerance_apical:
+      
+
+                    AP1_amps = numpy.append(AP1_amps, value['AP1_amplitude'])
+                    AP1_half_durs = numpy.append(AP1_half_durs, value['AP1_half_duration']) 
+                    AP1_rise_slopes = numpy.append(AP1_rise_slopes, value['AP1_rise_slope']) 
+                    APlast_amps = numpy.append(AP1_amps, value['APlast_amplitude'])
+                    APlast_half_durs = numpy.append(AP1_half_durs, value['APlast_half_duration']) 
+                    APlast_rise_slopes = numpy.append(AP1_rise_slopes, value['APlast_rise_slope']) 
+            prediction['apical'][dist].update({  
+                                              'AP1_amplitude' : {'mean': numpy.mean(AP1_amps)*mV, 'std' : numpy.std(AP1_amps)*mV}, 
+                                              'AP1_half_duration' : {'mean': numpy.mean(AP1_half_durs)*ms , 'std' : numpy.std(AP1_half_durs)*ms},
+                                              'AP1_rise_slope' : {'mean': numpy.mean(AP1_rise_slopes)*V/ms, 'std' : numpy.std(AP1_rise_slopes)*V/ms},
+                                              'APlast_amplitude' : {'mean': numpy.mean(APlast_amps)*mV, 'std' : numpy.std(APlast_amps)*mV},
+                                              'APlast_half_duration' : {'mean': numpy.mean(APlast_half_durs)*ms, 'std' : numpy.std(APlast_half_durs)*ms},
+                                              'APlast_rise_slope' : {'mean': numpy.mean(APlast_rise_slopes)*V/ms, 'std' : numpy.std(APlast_rise_slopes)*V/ms}
+                                             })
+
+            prediction_to_json['apical'][dist].update({  
+                                              'AP1_amplitude' : {'mean': str(numpy.mean(AP1_amps)*mV), 'std' : str(numpy.std(AP1_amps)*mV)}, 
+                                              'AP1_half_duration' : {'mean': str(numpy.mean(AP1_half_durs)*ms), 'std' : str(numpy.std(AP1_half_durs)*ms)},
+                                              'AP1_rise_slope' : {'mean': str(numpy.mean(AP1_rise_slopes)*V/ms), 'std' : str(numpy.std(AP1_rise_slopes)*V/ms)},
+                                              'APlast_amplitude' : {'mean': str(numpy.mean(APlast_amps)*mV), 'std' : str(numpy.std(APlast_amps)*mV)},
+                                              'APlast_half_duration' : {'mean': str(numpy.mean(APlast_half_durs)*ms), 'std' : str(numpy.std(APlast_half_durs)*ms)},
+                                              'APlast_rise_slope' : {'mean': str(numpy.mean(APlast_rise_slopes)*V/ms), 'std' : str(numpy.std(APlast_rise_slopes)*V/ms)}
+                                             })
+                                     
+        for dist in distances_basal:
+            AP1_amps = numpy.array([])
+            AP1_half_durs = numpy.array([])
+            AP1_rise_slopes = numpy.array([])
+            APlast_amps = numpy.array([])
+            APlast_half_durs = numpy.array([])
+            APlast_rise_slopes = numpy.array([])
+            prediction['basal'].update({dist : collections.OrderedDict()})
+            prediction_to_json['basal'].update({dist : collections.OrderedDict()}) 
+
+            for key, value in features['basal'].items():
+ 
+                if value['distance'] >= dist - tolerance_basal and  value['distance'] < dist + tolerance_basal:
+      
+
+                    AP1_amps = numpy.append(AP1_amps, value['AP1_amplitude'])
+                    AP1_half_durs = numpy.append(AP1_half_durs, value['AP1_half_duration']) 
+                    AP1_rise_slopes = numpy.append(AP1_rise_slopes, value['AP1_rise_slope']) 
+                    APlast_amps = numpy.append(AP1_amps, value['APlast_amplitude'])
+                    APlast_half_durs = numpy.append(AP1_half_durs, value['APlast_half_duration']) 
+                    APlast_rise_slopes = numpy.append(AP1_rise_slopes, value['APlast_rise_slope']) 
+            prediction['basal'][dist].update({  
+                                              'AP1_amplitude' : {'mean': numpy.mean(AP1_amps)*mV, 'std' : numpy.std(AP1_amps)*mV}, 
+                                              'AP1_half_duration' : {'mean': numpy.mean(AP1_half_durs)*ms, 'std' : numpy.std(AP1_half_durs)*ms},
+                                              'AP1_rise_slope' : {'mean': numpy.mean(AP1_rise_slopes)*V/ms, 'std' : numpy.std(AP1_rise_slopes)*V/ms},
+                                              'APlast_amplitude' : {'mean': numpy.mean(APlast_amps)*mV, 'std' : numpy.std(APlast_amps)*mV},
+                                              'APlast_half_duration' : {'mean': numpy.mean(APlast_half_durs)*ms, 'std' : numpy.std(APlast_half_durs)*ms},
+                                              'APlast_rise_slope' : {'mean': numpy.mean(APlast_rise_slopes)*V/ms, 'std' : numpy.std(APlast_rise_slopes)*V/ms}
+                                             })
+            prediction_to_json['basal'][dist].update({  
+                                              'AP1_amplitude' : {'mean': str(numpy.mean(AP1_amps)*mV), 'std' : str(numpy.std(AP1_amps)*mV)}, 
+                                              'AP1_half_duration' : {'mean': str(numpy.mean(AP1_half_durs)*ms), 'std' : str(numpy.std(AP1_half_durs)*ms)},
+                                              'AP1_rise_slope' : {'mean': str(numpy.mean(AP1_rise_slopes)*V/ms), 'std' : str(numpy.std(AP1_rise_slopes)*V/ms)},
+                                              'APlast_amplitude' : {'mean': str(numpy.mean(APlast_amps)*mV), 'std' : str(numpy.std(APlast_amps)*mV)},
+                                              'APlast_half_duration' : {'mean': str(numpy.mean(APlast_half_durs)*ms), 'std' : str(numpy.std(APlast_half_durs)*ms)},
+                                              'APlast_rise_slope' : {'mean': str(numpy.mean(APlast_rise_slopes)*V/ms ), 'std' : str(numpy.std(APlast_rise_slopes)*V/ms)}
+                                             })
+
+        file_name_features = self.path_results + 'bAP_BasketCell_model_features.json'
+        file_name_mean_features = self.path_results + 'bAP_BasketCell_mean_model_features.json'
+        json.dump(features_to_json, open(file_name_features , "w"), indent=4)
+        json.dump(prediction_to_json, open(file_name_mean_features , "w"), indent=4)
+
+        if self.save_all:
+            file_name_features_p = self.path_results + 'bAP_BasketCell_model_features.p'
+            file_name_mean_features_p = self.path_results + 'bAP_BasketCell_mean_model_features.p'           
+            pickle.dump(features, gzip.GzipFile(file_name_features_p, "wb"))
+            pickle.dump(prediction, gzip.GzipFile(file_name_mean_features_p, "wb"))
+
+        return features, prediction
+
+    def plot_features(self, features, prediction):
+
+        observation = self.observation
+
+        fig, axs = plt.subplots(3,2, sharex=True)
+        plt.subplots_adjust(hspace = 0.5, wspace = 0.4)
+        axs[0, 0].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red') 
+        axs[1, 0].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
+        axs[2, 0].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
+        axs[0, 1].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red', label = 'experiment') 
+        axs[1, 1].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
+        axs[2, 1].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
+     
+        axs[0, 0].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black') 
+        axs[1, 0].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
+        axs[2, 0].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
+        axs[0, 1].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black', label= 'soma model') 
+        axs[1, 1].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
+        axs[2, 1].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
+
+        for key, value in observation['apical'].items():
+            axs[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
+            axs[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
+        for key, value in observation['basal'].items():
+            axs[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
+            axs[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
+
+        i=0
+        for key, value in features['apical'].items():
+            axs[0, 0].plot(value['distance'], value['AP1_amplitude'], marker='o', linestyle='none', color='blue') 
+            axs[1, 0].plot(value['distance'], value['AP1_rise_slope'], marker='o', linestyle='none', color='blue')
+            axs[2, 0].plot(value['distance'], value['AP1_half_duration'], marker='o', linestyle='none', color='blue')
+            if i==0:
+                axs[0, 1].plot(value['distance'], value['APlast_amplitude'], marker='o', linestyle='none', color='blue', label='model') 
+            else:
+                axs[0, 1].plot(value['distance'], value['APlast_amplitude'], marker='o', linestyle='none', color='blue')
+            axs[1, 1].plot(value['distance'], value['APlast_rise_slope'], marker='o', linestyle='none', color='blue')
+            axs[2, 1].plot(value['distance'], value['APlast_half_duration'], marker='o', linestyle='none', color='blue') 
+            i+=1
+
+        for key, value in features['basal'].items():
+            axs[0, 0].plot(value['distance']*-1.0 , value['AP1_amplitude'], marker='o', linestyle='none', color='blue') 
+            axs[1, 0].plot(value['distance']*-1.0, value['AP1_rise_slope'], marker='o', linestyle='none', color='blue')
+            axs[2, 0].plot(value['distance']*-1.0, value['AP1_half_duration'], marker='o', linestyle='none', color='blue')
+            axs[0, 1].plot(value['distance']*-1.0, value['APlast_amplitude'], marker='o', linestyle='none', color='blue') 
+            axs[1, 1].plot(value['distance']*-1.0, value['APlast_rise_slope'], marker='o', linestyle='none', color='blue')
+            axs[2, 1].plot(value['distance']*-1.0, value['APlast_half_duration'], marker='o', linestyle='none', color='blue') 
+        axs[0, 0].set_ylabel('AP amplitude\n (mV)') 
+        axs[1, 0].set_ylabel('AP rise slope\n (V/ms)') 
+        axs[2, 0].set_ylabel('AP half-duration\n (ms)') 
+        axs[2, 0].set_xlabel('Distance (um)') 
+        axs[2, 1].set_xlabel('Distance (um)') 
+        axs[0, 0].set_title('First AP') 
+        axs[0, 1].set_title('Last AP')
+        fig.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_BC_features'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+       # plot prediction
+
+        fig2, axs2 = plt.subplots(3,2, sharex=True)
+        plt.subplots_adjust(hspace = 0.5, wspace = 0.4)
+        axs2[0, 0].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red') 
+        axs2[1, 0].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
+        axs2[2, 0].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
+        axs2[0, 1].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red', label = 'experiment') 
+        axs2[1, 1].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
+        axs[2, 1].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
+     
+        axs2[0, 0].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black') 
+        axs2[1, 0].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
+        axs2[2, 0].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
+        axs2[0, 1].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black', label= 'soma model') 
+        axs2[1, 1].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
+        axs2[2, 1].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
+
+        for key, value in observation['apical'].items():
+            axs2[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs2[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
+            axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs2[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
+        for key, value in observation['basal'].items():
+            axs2[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs2[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
+            axs2[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
+            axs2[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
+
+        i=0
+        for key, value in prediction['apical'].items():
+            axs2[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='blue') 
+            axs2[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='blue')
+            axs2[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='blue')
+            if i==0:
+                axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue', label = 'model')
+            else:
+                axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue', label = 'model') 
+            axs2[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='blue')
+            axs2[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='blue') 
+            i+=1
+ 
+        for key, value in prediction['basal'].items():
+            axs2[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='blue') 
+            axs2[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='blue')
+            axs2[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='blue')
+            axs2[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue') 
+            axs2[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='blue')
+            axs2[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='blue')   
+        axs2[0, 0].set_ylabel('AP amplitude\n (mV)') 
+        axs2[1, 0].set_ylabel('AP rise slope\n (V/ms)') 
+        axs2[2, 0].set_ylabel('AP half-duration\n (ms)') 
+        axs2[2, 0].set_xlabel('Distance (um)') 
+        axs2[2, 1].set_xlabel('Distance (um)') 
+        axs2[0, 0].set_title('First AP') 
+        axs2[0, 1].set_title('Last AP')
+        fig2.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_BC_mean_features'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight') 
+       
+    def plot_errors(self, errors):
+
+        n_dist_apic = len(list(errors['apical'].keys()))
+        n_dist_bas = len(list(errors['basal'].keys()))
+        n_subplots = 1+n_dist_apic+n_dist_bas
+        fig, axs = plt.subplots(int(numpy.ceil(n_subplots/2)), 2)
+        axs = axs.flatten()
+        plt.subplots_adjust(hspace = 0.7, wspace = 1.1)
+
+        i = 0   
+        for key, value in errors['apical'].items():
+           err =[]
+           ticks =[]
+           for k, v in value.items():
+               err.append(v)
+               ticks.append(k) 
+           y = list(range(len(ticks)))
+           axs[i].plot(err, y, 'o') 
+           axs[i].set_yticks(y)
+           axs[i].set_yticklabels(ticks)
+           axs[i].set_title('Apical dendrites - ' + str(key) + ' um')
+           i+=1
+
+        for key, value in errors['basal'].items():
+           err =[]
+           ticks =[]
+           for k, v in value.items():
+               err.append(v)
+               ticks.append(k) 
+           y = list(range(len(ticks)))
+           axs[i].plot(err, y, 'o') 
+           axs[i].set_yticks(y) 
+           axs[i].set_yticklabels(ticks)
+           axs[i].set_title('Basal dendrites - ' + str(key) + ' um')
+           i+=1
+
+        err =[]
+        ticks =[]
+
+        for k,v in errors['soma'].items():
+            err.append(v)
+            ticks.append(k)
+        y = list(range(len(ticks))) 
+        axs[i].plot(err, y, 'o')
+        axs[i].set_yticks(y)
+        axs[i].set_yticklabels(ticks)
+        axs[i].set_title('Soma')
+        fig.suptitle('Feature errors')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_BC_feature_errors'+ '.pdf', dpi=600, bbox_inches='tight') 
 
     def plot_traces(self, model, traces_soma_and_apical, traces_soma_and_basal, apical_locations_distances, basal_locations_distances):
         # TODO: somehow sort the traces by distance 
@@ -345,146 +720,6 @@ class BackpropagatingAPTest_BasketCell(Test):
             plt.savefig(self.path_figs + 'traces_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
-    def plot_features(self, model, features, actual_distances):
-
-        observation = self.observation
-
-        model_AP1_amps = numpy.array([])
-        model_APlast_amps = numpy.array([])
-        exp_mean_AP1_amps_StrongProp = numpy.array([])
-        exp_mean_AP1_amps_WeakProp = numpy.array([])
-        exp_mean_APlast_amps = numpy.array([])
-        exp_std_AP1_amps_StrongProp = numpy.array([])
-        exp_std_AP1_amps_WeakProp = numpy.array([])
-        exp_std_APlast_amps = numpy.array([])
-
-        distances = []
-        dists = numpy.array(self.config['recording']['distances'])
-        location_labels = []
-
-        for key, value in features.items():
-
-            if 'mean_AP1_amp_strong_propagating_at_'+str(key)+'um' in list(observation.keys()) or 'mean_AP1_amp_weak_propagating_at_'+str(key)+'um' in list(observation.keys()):
-                exp_mean_AP1_amps_StrongProp = numpy.append(exp_mean_AP1_amps_StrongProp, observation['mean_AP1_amp_strong_propagating_at_'+str(key)+'um'])
-                exp_std_AP1_amps_StrongProp = numpy.append(exp_std_AP1_amps_StrongProp, observation['std_AP1_amp_strong_propagating_at_'+str(key)+'um'])
-
-                exp_mean_AP1_amps_WeakProp = numpy.append(exp_mean_AP1_amps_WeakProp, observation['mean_AP1_amp_weak_propagating_at_'+str(key)+'um'])
-                exp_std_AP1_amps_WeakProp = numpy.append(exp_std_AP1_amps_WeakProp, observation['std_AP1_amp_weak_propagating_at_'+str(key)+'um'])
-
-            else:
-                exp_mean_AP1_amps_WeakProp = numpy.append(exp_mean_AP1_amps_WeakProp, observation['mean_AP1_amp_at_'+str(key)+'um'])
-                exp_std_AP1_amps_WeakProp = numpy.append(exp_std_AP1_amps_WeakProp, observation['std_AP1_amp_at_'+str(key)+'um'])
-                exp_mean_AP1_amps_StrongProp = numpy.append(exp_mean_AP1_amps_StrongProp, observation['mean_AP1_amp_at_'+str(key)+'um'])
-                exp_std_AP1_amps_StrongProp = numpy.append(exp_std_AP1_amps_StrongProp, observation['std_AP1_amp_at_'+str(key)+'um'])
-
-            exp_mean_APlast_amps = numpy.append(exp_mean_APlast_amps, observation['mean_APlast_amp_at_'+str(key)+'um'])
-            exp_std_APlast_amps = numpy.append(exp_std_APlast_amps, observation['std_APlast_amp_at_'+str(key)+'um'])
-
-            for k, v in features[key].items() :
-                distances.append(actual_distances[k])
-                model_AP1_amps = numpy.append(model_AP1_amps, features[key][k]['AP1_amp'])
-                model_APlast_amps = numpy.append(model_APlast_amps, features[key][k]['APlast_amp'])
-                location_labels.append(k[0]+'('+str(k[1])+')')
-
-        plt.figure()
-        for i in range(len(distances)):
-            plt.plot(distances[i], model_AP1_amps[i], marker ='o', linestyle='none', label = location_labels[i])
-        plt.errorbar(dists, exp_mean_AP1_amps_WeakProp, yerr = exp_std_AP1_amps_WeakProp, marker='o', linestyle='none', label = 'experiment - Weak propagating')
-        plt.errorbar(dists, exp_mean_AP1_amps_StrongProp, yerr = exp_std_AP1_amps_StrongProp, marker='o', linestyle='none', label = 'experiment - Strong propagating')
-        plt.xlabel('Distance from soma (um)')
-        plt.ylabel('AP1_amp (mV)')
-        lgd = plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'AP1_amps'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-        plt.figure()
-        for i in range(len(distances)):
-            plt.plot(distances[i], model_APlast_amps[i], marker ='o', linestyle='none', label = location_labels[i])
-        plt.errorbar(dists, exp_mean_APlast_amps, yerr = exp_std_APlast_amps, marker='o', linestyle='none', label = 'experiment')
-        plt.xlabel('Distance from soma (um)')
-        plt.ylabel('APlast_amp (mV)')
-        lgd = plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'APlast_amps'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-    def plot_results(self, observation, prediction, errors, model_name_bAP):
-
-
-        # Mean absolute feature values plot
-        distances = numpy.array(self.config['recording']['distances'])
-
-        model_mean_AP1_amps = numpy.array([])
-        model_mean_APlast_amps = numpy.array([])
-        model_std_AP1_amps = numpy.array([])
-        model_std_APlast_amps = numpy.array([])
-        exp_mean_AP1_amps_StrongProp = numpy.array([])
-        exp_mean_AP1_amps_WeakProp = numpy.array([])
-        exp_mean_APlast_amps = numpy.array([])
-        exp_std_AP1_amps_StrongProp = numpy.array([])
-        exp_std_AP1_amps_WeakProp = numpy.array([])
-        exp_std_APlast_amps = numpy.array([])
-
-        for i in range(len(distances)):
-            model_mean_AP1_amps = numpy.append(model_mean_AP1_amps, prediction['model_AP1_amp_at_'+str(distances[i])+'um']['mean'])
-            model_mean_APlast_amps = numpy.append(model_mean_APlast_amps, prediction['model_APlast_amp_at_'+str(distances[i])+'um']['mean'])
-            model_std_AP1_amps = numpy.append(model_std_AP1_amps, prediction['model_AP1_amp_at_'+str(distances[i])+'um']['std'])
-            model_std_APlast_amps = numpy.append(model_std_APlast_amps, prediction['model_APlast_amp_at_'+str(distances[i])+'um']['std'])
-
-            if 'mean_AP1_amp_strong_propagating_at_'+str(distances[i])+'um' in list(observation.keys()) or 'mean_AP1_amp_weak_propagating_at_'+str(distances[i])+'um' in list(observation.keys()):
-                exp_mean_AP1_amps_StrongProp = numpy.append(exp_mean_AP1_amps_StrongProp, observation['mean_AP1_amp_strong_propagating_at_'+str(distances[i])+'um'])
-                exp_std_AP1_amps_StrongProp = numpy.append(exp_std_AP1_amps_StrongProp, observation['std_AP1_amp_strong_propagating_at_'+str(distances[i])+'um'])
-
-                exp_mean_AP1_amps_WeakProp = numpy.append(exp_mean_AP1_amps_WeakProp, observation['mean_AP1_amp_weak_propagating_at_'+str(distances[i])+'um'])
-                exp_std_AP1_amps_WeakProp = numpy.append(exp_std_AP1_amps_WeakProp, observation['std_AP1_amp_weak_propagating_at_'+str(distances[i])+'um'])
-
-            else:
-                exp_mean_AP1_amps_WeakProp = numpy.append(exp_mean_AP1_amps_WeakProp, observation['mean_AP1_amp_at_'+str(distances[i])+'um'])
-                exp_std_AP1_amps_WeakProp = numpy.append(exp_std_AP1_amps_WeakProp, observation['std_AP1_amp_at_'+str(distances[i])+'um'])
-                exp_mean_AP1_amps_StrongProp = numpy.append(exp_mean_AP1_amps_StrongProp, observation['mean_AP1_amp_at_'+str(distances[i])+'um'])
-                exp_std_AP1_amps_StrongProp = numpy.append(exp_std_AP1_amps_StrongProp, observation['std_AP1_amp_at_'+str(distances[i])+'um'])
-
-            exp_mean_APlast_amps = numpy.append(exp_mean_APlast_amps, observation['mean_APlast_amp_at_'+str(distances[i])+'um'])
-            exp_std_APlast_amps = numpy.append(exp_std_APlast_amps, observation['std_APlast_amp_at_'+str(distances[i])+'um'])
-
-        plt.figure()
-        plt.errorbar(distances, model_mean_AP1_amps, yerr = model_std_AP1_amps, marker ='o', linestyle='none', label = model_name_bAP)
-        plt.errorbar(distances, exp_mean_AP1_amps_WeakProp, yerr = exp_std_AP1_amps_WeakProp, marker='o', linestyle='none', label = 'experiment - Weak propagating')
-        plt.errorbar(distances, exp_mean_AP1_amps_StrongProp, yerr = exp_std_AP1_amps_StrongProp, marker='o', linestyle='none', label = 'experiment - Strong propagating')
-        plt.xlabel('Distance from soma (um)')
-        plt.ylabel('AP1_amp (mV)')
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'AP1_amp_means'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-        plt.figure()
-        plt.errorbar(distances, model_mean_APlast_amps, yerr = model_std_APlast_amps, marker ='o', linestyle='none', label = model_name_bAP)
-        plt.errorbar(distances, exp_mean_APlast_amps, yerr = exp_std_APlast_amps, marker='o', linestyle='none', label = 'experiment')
-        plt.xlabel('Distance from soma (um)')
-        plt.ylabel('APlast_amp (mV)')
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'APlast_amp_means'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-
-        # Plot of errors
-
-        keys = []
-        values = []
-
-        #fig, ax = plt.subplots()
-        plt.figure()
-        for key, value in errors.items():
-            keys.append(key)
-            values.append(value)
-        y=list(range(len(keys)))
-        y.reverse()
-        #ax.set_yticks(y)
-        #print keys
-        #print values
-        plt.plot(values, y, 'o')
-        plt.yticks(y, keys)
-        if self.save_all:
-            plt.savefig(self.path_figs + 'bAP_errors'+ '.pdf', bbox_inches='tight')
     '''
     def validate_observation(self, observation):
 
@@ -525,7 +760,7 @@ class BackpropagatingAPTest_BasketCell(Test):
         tolerance_basal = self.config['basal_recording']['tolerance']
         dist_range_basal = [min(distances_basal) - tolerance_basal, max(distances_basal) + tolerance_basal]
 
-        apical_locations, apical_locations_distances = model.get_random_locations_multiproc('trunk', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical) # number of random locations , seed
+        apical_locations, apical_locations_distances = model.get_random_locations_multiproc('apical', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical) # number of random locations , seed
         # apical_locations_distances = sorted(apical_locations_distances, key=apical_locations_distances.get)
         #print dend_locations, actual_distances
         print('Apical dendritic locations to be tested (with their actual distances):', apical_locations_distances)
@@ -542,14 +777,13 @@ class BackpropagatingAPTest_BasketCell(Test):
         duration = self.config['stimulus']['duration']
         amplitude = self.config['stimulus']['amplitude']
 
-        prediction = collections.OrderedDict()
 
         plt.close('all') #needed to avoid overlapping of saved images when the test is run on multiple models
 
 
         pool = multiprocessing.Pool(1, maxtasksperchild = 1)
         traces = pool.apply(self.cclamp, args = (model, amplitude, delay, duration, "soma", 0.5, dend_locations))
-        print(traces)
+        # print(traces)
 
         traces_soma_and_basal = collections.OrderedDict() 
         traces_soma_and_basal['T'] = traces['T'] 
@@ -566,8 +800,8 @@ class BackpropagatingAPTest_BasketCell(Test):
                traces_soma_and_apical['v_rec'].update({key:value}) 
             if list(key) in basal_locations:
                traces_soma_and_basal['v_rec'].update({key:value})
-        print(traces_soma_and_apical)
-        print(traces_soma_and_basal)       
+        # print(traces_soma_and_apical)
+        # print(traces_soma_and_basal)       
 
         filepath = self.path_results + self.test_log_filename
         self.logFile = open(filepath, 'w') # if it is opened before multiprocessing, the multiporeccing won't work under python3
@@ -576,69 +810,22 @@ class BackpropagatingAPTest_BasketCell(Test):
         self.logFile.write('Basal dendritic locations to be tested (with their actual distances):\n'+ str(basal_locations_distances)+'\n')
         self.logFile.write("---------------------------------------------------------------------------------------------------\n")
 
-        # self.logFile.write(message_to_logFile)
-
-
 
         self.plot_traces(model, traces_soma_and_apical, traces_soma_and_basal, apical_locations_distances, basal_locations_distances)
 
-        """itt tartok"""
-        traces_results = self.extract_somatic_spiking_features(traces, delay, duration)
+
+        efel_features_somatic, efel_features_apical, efel_features_basal = self.extract_features_by_eFEL(traces_soma_and_apical, traces_soma_and_basal, delay, duration)
+
+        # print(efel_features_somatic, efel_features_apical, efel_features_basal)
+
+        time_indices_befor_and_after_somatic_AP = self.get_time_indices_befor_and_after_somatic_AP(efel_features_somatic, traces_soma_and_apical)
+
+        self.plot_AP1_APlast(time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal)
+
+        features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal)
 
 
-        features = self.extract_amplitudes(traces, traces_results, actual_distances)
-
-        features_json = collections.OrderedDict()
-        for key in features:
-            features_json[key] = collections.OrderedDict()
-            for ke in features[key]:
-                features_json[key][str(ke)] = collections.OrderedDict()
-                for k, value in features[key][ke].items():
-                    features_json[key][str(ke)][k] = str(value)
-
-
-        # generating prediction
-        for key in features:
-            AP1_amps = numpy.array([])
-            APlast_amps = numpy.array([])
-
-            for k in features[key]:
-                AP1_amps = numpy.append(AP1_amps, features[key][k]['AP1_amp'] )
-            prediction['model_AP1_amp_at_'+str(key)+'um'] = {}
-            prediction['model_AP1_amp_at_'+str(key)+'um']['mean'] = float(numpy.mean(AP1_amps))*mV
-            prediction['model_AP1_amp_at_'+str(key)+'um']['std'] = float(numpy.std(AP1_amps))*mV
-
-        for key in features:
-            AP1_amps = numpy.array([])
-            APlast_amps = numpy.array([])
-            for k in features[key]:
-                APlast_amps = numpy.append(APlast_amps, features[key][k]['APlast_amp'] )
-            prediction['model_APlast_amp_at_'+str(key)+'um'] = {}
-            prediction['model_APlast_amp_at_'+str(key)+'um']['mean'] = float(numpy.mean(APlast_amps))*mV
-            prediction['model_APlast_amp_at_'+str(key)+'um']['std'] = float(numpy.std(APlast_amps))*mV
-
-        prediction_json = collections.OrderedDict()
-        for key in prediction:
-            prediction_json[key] = collections.OrderedDict()
-            for k, value in prediction[key].items():
-                prediction_json[key][k]=str(value)
-
-
-        file_name_json = self.path_results + 'bAP_model_features_means.json'
-        json.dump(prediction_json, open(file_name_json, "w"), indent=4)
-        file_name_features_json = self.path_results + 'bAP_model_features.json'
-        json.dump(features_json, open(file_name_features_json, "w"), indent=4)
-
-        if self.save_all:
-            file_name_pickle = self.path_results + 'bAP_model_features.p'
-
-            pickle.dump(features, gzip.GzipFile(file_name_pickle, "wb"))
-
-            file_name_pickle = self.path_results + 'bAP_model_features_means.p'
-
-            pickle.dump(prediction, gzip.GzipFile(file_name_pickle, "wb"))
-
-        self.plot_features(model, features, actual_distances)
+        self.plot_features(features, prediction)
 
         efel.reset()
 
@@ -647,54 +834,30 @@ class BackpropagatingAPTest_BasketCell(Test):
     def compute_score(self, observation, prediction, verbose=False):
         """Implementation of sciunit.Test.score_prediction."""
 
-        distances = numpy.array(self.config['recording']['distances'])
-        #score_sum_StrongProp, score_sum_WeakProp  = scores.ZScore_backpropagatingAP.compute(observation,prediction, [50, 150, 250])
-        score_avg, errors= scores.ZScore_backpropagatingAP.compute(observation,prediction, distances)
 
-        scores_dict = {}
-        scores_dict['Z_score_avg_strong_propagating'] = score_avg[0]
-        scores_dict['Z_score_avg_weak_propagating'] = score_avg[1]
+        score_avg, errors= scores.ZScore_backpropagatingAP_BasketCell.compute(observation,prediction)
 
-        file_name=self.path_results+'bAP_errors.json'
+        file_name=self.path_results+'bAP_BC_errors.json'
 
         json.dump(errors, open(file_name, "w"), indent=4)
 
         file_name_s=self.path_results+'bAP_scores.json'
 
-        json.dump(scores_dict, open(file_name_s, "w"), indent=4)
 
-        self.plot_results(observation, prediction, errors, model_name_bAP)
+        self.plot_errors(errors)
 
         if self.show_plot:
             plt.show()
 
-        if scores.ZScore_backpropagatingAP.strong:#score_avg[0] < score_avg[1]:
-            best_score = score_avg[0]
-            print('This is a rather STRONG propagating model')
+            
+        score_json= {'Z_score_avg' : score_avg}
 
 
-            self.logFile.write('This is a rather STRONG propagating model\n')
-            self.logFile.write("---------------------------------------------------------------------------------------------------\n")
-
-            score_json= {'Z_score_avg_STRONG_propagating' : best_score}
-        elif scores.ZScore_backpropagatingAP.strong is False:#score_avg[1] < score_avg[0]:
-            best_score = score_avg[1]
-            print('This is a rather WEAK propagating model')
-
-            self.logFile.write('This is a rather WEAK propagating model\n')
-            self.logFile.write("---------------------------------------------------------------------------------------------------\n")
-
-            score_json= {'Z_score_avg_Weak_propagating' : best_score}
-        elif scores.ZScore_backpropagatingAP.strong is None:#score_avg[1] == score_avg[0]:
-            best_score = score_avg[0]
-            score_json= {'Z_score_avg' : best_score}
-
-
-        file_name_score = self.path_results + 'bAP_final_score.json'
+        file_name_score = self.path_results + 'bAP_BC_final_score.json'
         json.dump(score_json, open(file_name_score, "w"), indent=4)
 
 
-        score=scores.ZScore_backpropagatingAP(best_score)
+        score=scores.ZScore_backpropagatingAP_BasketCell(score_avg)
 
         self.logFile.write(str(score)+'\n')
         self.logFile.write("---------------------------------------------------------------------------------------------------\n")
