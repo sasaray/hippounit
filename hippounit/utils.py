@@ -34,7 +34,8 @@ class ModelLoader(sciunit.Model,
                  cap.InitialiseModel,
                  cap.ThetaSynapticStimuli,
                  cap.RunSimulation_ReturnTraces,
-                 cap.NumOfPossibleLocations):
+                 cap.NumOfPossibleLocations,
+                 cap.ReceivesCurrentPulses_ProvidesResponse_MultipleLocations):
 
     def __init__(self, name="model", mod_files_path=None):
         """ Constructor. """
@@ -56,6 +57,7 @@ class ModelLoader(sciunit.Model,
         self.name = name
         self.threshold = -20
         self.stim = None
+        self.stim_list = [] 
         self.soma = None
         sciunit.Model.__init__(self, name=name)
 
@@ -300,6 +302,109 @@ class ModelLoader(sciunit.Model,
         h.celsius = self.celsius
         h.init()
         h.tstop = delay + dur + 200
+        h.run()
+
+        t = numpy.array(rec_t)
+        v_stim = numpy.array(rec_v_stim)
+
+        '''
+        for i in range(0,len(dend_loc)):
+            v.append(numpy.array(rec_v[i]))
+        '''
+
+        # The ProvidesRecordingLocationsOnTrunk and the ProvidesRandomDendriticLocations capabilities returns the dendritic locations in different format. This function's return form depends on which format it gets.
+
+        i = 0
+        if isinstance(dend_locations, list):
+            for loc in dend_locations:
+                loc_key = (loc[0], loc[1]) # list can not be a key, but tuple can
+                v[loc_key] = numpy.array(rec_v[i])     # the list that specifies dendritic location will be a key too.
+                i+=1
+        else:
+            for key, value in dend_locations.items():
+                v[key] = collections.OrderedDict()
+                for j in range(len(dend_locations[key])):
+                    loc_key = (dend_locations[key][j][0],dend_locations[key][j][1]) # list can not be a key, but tuple can
+                    v[key][loc_key] = numpy.array(rec_v[i])     # the list that specifies dendritic location will be a key too.
+                    i+=1
+
+        return t, v_stim, v
+
+    def inject_current_pulses_record_respons_multiple_loc(self, amp, delay, dur_of_pulse, dur_of_stim, num_of_pulses, frequency, section_stim, loc_stim, dend_locations): 
+
+        self.initialise()
+
+        if self.cvode_active:
+            h.cvode_active(1)
+        else:
+            h.cvode_active(0)
+
+        stim_section_name = self.translate(section_stim, distance=0)
+        #rec_section_name = self.translate(section_rec, distance=0)
+        #exec("self.sect_loc=h." + str(self.soma)+"("+str(0.5)+")")
+
+        exec("self.sect_loc_stim=h." + str(stim_section_name)+"("+str(loc_stim)+")")
+        exec("self.sect_loc_rec=h." + str(stim_section_name)+"("+str(loc_stim)+")")
+
+        print("- running amplitude: " + str(amp) + " with " + str(frequency) + " Hz"  + " on model: " + self.name + " at: " + stim_section_name + "(" + str(loc_stim) + ")")
+
+        interval_bw_pulses = 1.0/ frequency * 1000.0
+        self.stim_list = [None] * num_of_pulses
+
+        for i in range(num_of_pulses):
+            self.stim_list[i] = h.IClamp(self.sect_loc_stim)
+
+            self.stim_list[i].amp = amp
+            self.stim_list[i].delay = delay + i * interval_bw_pulses
+            self.stim_list[i].dur = dur_of_pulse
+
+        rec_t = h.Vector()
+        rec_t.record(h._ref_t)
+
+        rec_v_stim = h.Vector()
+        rec_v_stim.record(self.sect_loc_rec._ref_v)
+
+        rec_v = []
+        v = collections.OrderedDict()
+        self.dend_loc_rec =[]
+
+        '''
+        for i in range(0,len(dend_loc)):
+
+            exec("self.dend_loc_rec.append(h." + str(dend_loc[i][0])+"("+str(dend_loc[i][1])+"))")
+            rec_v.append(h.Vector())
+            rec_v[i].record(self.dend_loc_rec[i]._ref_v)
+            #print self.dend_loc[i]
+        '''
+        #print dend_locations
+        # The ProvidesRecordingLocationsOnTrunk and the ProvidesRandomDendriticLocations capabilities returns the dendritic locations in different format. 
+
+        if isinstance(dend_locations, list):
+            for locs in dend_locations:
+                exec("self.dend_loc_rec.append(h." + str(locs[0])+"("+str(locs[1])+"))")
+                rec_v.append(h.Vector())
+
+        else:
+            for key, value in dend_locations.items():
+                for i in range(len(dend_locations[key])):
+                    exec("self.dend_loc_rec.append(h." + str(dend_locations[key][i][0])+"("+str(dend_locations[key][i][1])+"))")
+                    rec_v.append(h.Vector())
+
+
+        for i in range(len(self.dend_loc_rec)):
+            rec_v[i].record(self.dend_loc_rec[i]._ref_v)
+            #print self.dend_loc[i]
+
+        h.stdinit()
+
+        dt = 0.025
+        h.dt = dt
+        h.steps_per_ms = 1/dt
+        h.v_init = self.v_init#-65
+
+        h.celsius = self.celsius
+        h.init()
+        h.tstop = delay + dur_of_stim + 200
         h.run()
 
         t = numpy.array(rec_t)

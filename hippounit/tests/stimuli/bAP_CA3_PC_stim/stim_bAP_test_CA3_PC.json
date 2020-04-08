@@ -1,0 +1,21 @@
+{
+"long stimulus": {
+  "delay" : 500,
+  "duration": 1000
+},
+"train of brief stimuli" : {
+  "delay" : 500,
+  "frequencies": [20, 50, 100] ,
+  "duration of single pulse" : 2,
+  "number of pulses" : 10,
+  "amplitude of pulses" : 3.0
+},
+"apical_recording": {
+  "distances": [100, 200, 300],
+  "tolerance": 50
+},
+"basal_recording": {
+  "distances": [50],
+  "tolerance": 25
+}
+}
