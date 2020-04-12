@@ -202,7 +202,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         return observation
 
 
-    def cclamp(self, model, amp, delay, dur, section_stim, loc_stim, dend_locations):
+    def long_rheobase_input(self, model, amp, delay, dur, section_stim, loc_stim, dend_locations):
 
         if self.base_directory:
             self.path_temp_data = self.base_directory + 'temp_data/' + 'backpropagating_AP_BC/' + model.name + '/'
@@ -218,7 +218,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
                 raise
             pass
 
-        file_name = self.path_temp_data + 'cclamp_' + str(amp) + '.p'
+        file_name = self.path_temp_data + 'long_rheobase_input_' + str(amp) + '.p'
 
         traces = {}
 
@@ -269,141 +269,184 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         return traces
 
-    def extract_features_by_eFEL(self, traces_soma_and_apical, traces_soma_and_basal, delay, duration):
+    def extract_features_by_eFEL(self, traces_soma_and_apical, traces_soma_and_basal, delay, dur_of_stim, delay_long, duration_long, frequencies):
 
 
+
+        traces_results_soma = {'train of brief stimuli' : {}, 'long stimulus' : None} 
+        traces_results_apical = {'train of brief stimuli' : {}, 'long stimulus' : {}}
+        traces_results_basal = {'train of brief stimuli' : {}, 'long stimulus' : {}}
+
+
+        ''' brief pulses stim'''
+        for freq in frequencies: 
+
+            traces_results_soma['train of brief stimuli'][freq] = {} 
+            traces_results_apical['train of brief stimuli'][freq] = {} 
+            traces_results_basal['train of brief stimuli'][freq] = {} 
+
+            # soma
+            trace_soma = {}
+            traces_soma=[]
+            trace_soma['T'] = traces_soma_and_apical['train of brief stimuli'][freq]['T']
+            trace_soma['V'] = traces_soma_and_apical['train of brief stimuli'][freq]['v_stim']
+            trace_soma['stim_start'] = [delay]
+            trace_soma['stim_end'] = [delay + dur_of_stim]
+            traces_soma.append(trace_soma)
+            traces_results_soma['train of brief stimuli'][freq] = efel.getFeatureValues(traces_soma, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+
+            #apical
+            for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
+                trace = {}
+                traces_for_efel=[]
+                trace['T'] = traces_soma_and_apical['train of brief stimuli'][freq]['T']
+                trace['V'] = value
+                trace['stim_start'] = [delay]
+                trace['stim_end'] = [delay + dur_of_stim]
+                traces_for_efel.append(trace)
+                traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
+                traces_results_apical['train of brief stimuli'][freq].update({key : traces_results}) 
+
+            #basal
+            for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
+                trace = {}
+                traces_for_efel=[]
+                trace['T'] = traces_soma_and_basal['train of brief stimuli'][freq]['T']
+                trace['V'] = value
+                trace['stim_start'] = [delay]
+                trace['stim_end'] = [delay + dur_of_stim]
+                traces_for_efel.append(trace)
+
+
+                traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
+                traces_results_basal['train of brief stimuli'][freq].update({key : traces_results})
+
+
+        ''' long stimulus '''
         # soma
         trace_soma = {}
         traces_soma=[]
-        trace_soma['T'] = traces_soma_and_apical['T']
-        trace_soma['V'] = traces_soma_and_apical['v_stim']
-        trace_soma['stim_start'] = [delay]
-        trace_soma['stim_end'] = [delay + duration]
+        trace_soma['T'] = traces_soma_and_apical['long stimulus']['T']
+        trace_soma['V'] = traces_soma_and_apical['long stimulus']['v_stim']
+        trace_soma['stim_start'] = [delay_long]
+        trace_soma['stim_end'] = [delay_long + duration_long]
         traces_soma.append(trace_soma)
 
 
-        traces_results_soma = efel.getFeatureValues(traces_soma, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+        traces_results_soma['long stimulus'] = efel.getFeatureValues(traces_soma, ['AP_amplitude', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
    
         #apical
-        traces_results_apical = {} 
-        for key, value in traces_soma_and_apical['v_rec'].items():
+        for key, value in traces_soma_and_apical['long stimulus']['v_rec'].items():
             trace = {}
             traces_for_efel=[]
-            trace['T'] = traces_soma_and_apical['T']
+            trace['T'] = traces_soma_and_apical['long stimulus']['T']
             trace['V'] = value
-            trace['stim_start'] = [delay]
-            trace['stim_end'] = [delay + duration]
+            trace['stim_start'] = [delay_long]
+            trace['stim_end'] = [delay_long + duration_long]
             traces_for_efel.append(trace)
 
 
-            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
-            traces_results_apical[key] = traces_results
+            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
+            traces_results_apical['long stimulus'][key] = traces_results
 
-        #basal
-        traces_results_basal = {} 
-        for key, value in traces_soma_and_basal['v_rec'].items():
+        #basal 
+        for key, value in traces_soma_and_basal['long stimulus']['v_rec'].items():
             trace = {}
             traces_for_efel=[]
-            trace['T'] = traces_soma_and_basal['T']
+            trace['T'] = traces_soma_and_basal['long stimulus']['T']
             trace['V'] = value
-            trace['stim_start'] = [delay]
-            trace['stim_end'] = [delay + duration]
+            trace['stim_start'] = [delay_long]
+            trace['stim_end'] = [delay_long + duration_long]
             traces_for_efel.append(trace)
 
 
-            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
-            traces_results_basal[key] = traces_results 
-
-
-       #Testing
-        '''
-        trace = {}
-        traces_for_efel=[]
-        trace['T'] = traces_soma_and_basal['T']
-        trace['V'] = traces_soma_and_basal['v_rec'][('CA1_PC_cAC_sig[0].dend[3]', 0.16666666666666666)] 
-        trace['stim_start'] = [delay]
-        trace['stim_end'] = [delay + duration]
-        traces_for_efel.append(trace)
-        results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width'])
-        print('FIIIGYUUUUUUU', results[0]['AP_duration_half_width'])
-        plt.figure()
-        plt.plot(trace['T'],trace['V'])
-        '''
+            traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
+            traces_results_basal['long stimulus'][key] = traces_results 
 
 
         return traces_results_soma, traces_results_apical, traces_results_basal
 
 
-    def get_time_indices_befor_and_after_somatic_AP(self, efel_features_somatic, traces_soma_and_apical):
+    def get_time_indices_befor_and_after_somatic_AP(self, efel_features_somatic, traces_soma_and_apical, frequencies):
 
+        start_index_AP1 = {} 
+        end_index_AP1 = {}
+        start_index_AP5 = {}
+        end_index_AP5 = {}
 
-        soma_AP_begin_time = efel_features_somatic[0]['AP_begin_time']
-        #soma_inv_first_ISI = traces_results[0]['inv_first_ISI']
-        soma_first_ISI = efel_features_somatic[0]['doublet_ISI'][0]
-        #print soma_AP_begin_time[0], soma_AP_begin_time[0]-1
-        #print traces_results[0]['inv_first_ISI'], soma_first_ISI
-        s_indices_AP1 = numpy.where(traces_soma_and_apical['T'] >= (soma_AP_begin_time[0]-1.0))
-        if 10 < soma_first_ISI:
-            plus = 10
-        else:
-            plus = soma_first_ISI-3
-        e_indices_AP1 = numpy.where(traces_soma_and_apical['T'] >= (soma_AP_begin_time[0]+plus))
-        start_index_AP1 = s_indices_AP1[0][0]
-        end_index_AP1 = e_indices_AP1[0][0]
-        #print start_index_AP1
-        #print end_index_AP1
+        for freq in frequencies:
+            soma_AP_begin_time = efel_features_somatic['train of brief stimuli'][freq][0]['AP_begin_time']
+            soma_first_ISI = efel_features_somatic['train of brief stimuli'][freq][0]['doublet_ISI'][0]
+            s_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= (soma_AP_begin_time[0]-1.0))
+            if 10 < soma_first_ISI:
+                plus = 10
+            else:
+                plus = soma_first_ISI-3
+            e_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= (soma_AP_begin_time[0]+plus))
+            start_index_AP1[freq] = s_indices_AP1[0][0]
+            end_index_AP1[freq] = e_indices_AP1[0][0]
+            #print start_index_AP1
+            #print end_index_AP1
 
-        s_indices_APlast = numpy.where(traces_soma_and_apical['T'] >= soma_AP_begin_time[-1]-1.0)
-        e_indices_APlast = numpy.where(traces_soma_and_apical['T'] >= soma_AP_begin_time[-1]+10)
-        start_index_APlast = s_indices_APlast[0][0]
-        end_index_APlast = e_indices_APlast[0][0]
-        return [start_index_AP1, end_index_AP1, start_index_APlast, end_index_APlast]  
+            s_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= soma_AP_begin_time[4]-1.0)
+            e_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= soma_AP_begin_time[4]+10)
+            start_index_AP5[freq] = s_indices_AP5[0][0]
+            end_index_AP5[freq] = e_indices_AP5[0][0]
+        print (start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5)
+        return [start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5]  
 
-    def plot_AP1_APlast(self, time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal):
+    def plot_AP1_AP5(self, time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal, frequencies):
 
-        start_index_AP1, end_index_AP1, start_index_APlast, end_index_APlast = time_indices_befor_and_after_somatic_AP
+        start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5 = time_indices_befor_and_after_somatic_AP
 
-        # zoom to first and last AP apical
-        fig1, axs1 = plt.subplots(1,2)
-        plt.subplots_adjust(wspace = 0.4)
-        axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r')
-        axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_apical['v_rec'].items():
-            axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key])
-            axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
-        axs1[0].set_xlabel('time (ms)')
-        axs1[0].set_ylabel('membrane potential (mV)')
-        axs1[0].set_title('First AP')
-        axs1[0].set_xlim(traces_soma_and_apical['T'][start_index_AP1], traces_soma_and_apical['T'][end_index_AP1])
-        axs1[1].set_xlabel('time (ms)')
-        axs1[1].set_ylabel('membrane potential (mV)')
-        axs1[1].set_title('Last AP')
-        axs1[1].set_xlim(traces_soma_and_apical['T'][start_index_APlast], traces_soma_and_apical['T'][end_index_APlast])
-        lgd=axs1[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        # zoom to first and fifth AP apical
+        fig1, axs1 = plt.subplots(len(frequencies),2, sharey = True)
+        plt.subplots_adjust(wspace = 0.4, hspace = 0.4 )
+        for i, freq in enumerate(frequencies):
+            axs1[i, 0].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r')
+            axs1[i, 1].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
+            axs1[i, 0].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,0].transAxes)
+            axs1[i, 1].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,1].transAxes)
+            for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
+                axs1[i, 0].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key])
+                axs1[i, 1].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+
+            axs1[i, 0].set_xlim(traces_soma_and_apical['train of brief stimuli'][freq]['T'][start_index_AP1[freq]], traces_soma_and_apical['train of brief stimuli'][freq]['T'][end_index_AP1[freq]])
+            axs1[i, 1].set_xlim(traces_soma_and_apical['train of brief stimuli'][freq]['T'][start_index_AP5[freq]], traces_soma_and_apical['train of brief stimuli'][freq]['T'][end_index_AP5[freq]])
+            axs1[i, 0].set_ylabel('membrane\n  potential (mV)')
+        axs1[0, 0].set_title('First AP')
+        axs1[-1, 0].set_xlabel('time (ms)')
+        axs1[-1, 1].set_xlabel('time (ms)')
+        axs1[0, 1].set_title('Fifth AP')
+            
+        lgd=axs1[0, 1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         fig1.suptitle('Apical dendrites')
         if self.save_all:
-            plt.savefig(self.path_figs + 'First_and_last_AP_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(self.path_figs + 'First_and_fifth_APs_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-        # zoom to first and last AP basal
-        fig2, axs2 = plt.subplots(1,2)
-        plt.subplots_adjust(wspace = 0.4)
-        axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r')
-        axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_basal['v_rec'].items():
-            axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key])
-            axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
-        axs2[0].set_xlabel('time (ms)')
-        axs2[0].set_ylabel('membrane potential (mV)')
-        axs2[0].set_title('First AP')
-        axs2[0].set_xlim(traces_soma_and_basal['T'][start_index_AP1], traces_soma_and_basal['T'][end_index_AP1])
-        axs2[1].set_xlabel('time (ms)')
-        axs2[1].set_ylabel('membrane potential (mV)')
-        axs2[1].set_title('Last AP')
-        axs2[1].set_xlim(traces_soma_and_basal['T'][start_index_APlast], traces_soma_and_basal['T'][end_index_APlast])
-        lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        # zoom to first and fifth AP basal
+        fig2, axs2 = plt.subplots(len(frequencies),2, sharey=True)
+        plt.subplots_adjust(wspace = 0.4, hspace = 0.6)
+        for i, freq in enumerate(frequencies):
+            axs2[i, 0].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r')
+            axs2[i, 1].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
+            axs2[i, 0].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,0].transAxes)
+            axs2[i, 1].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,1].transAxes)
+            for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
+                axs2[i, 0].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key])
+                axs2[i, 1].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+            axs2[i, 0].set_xlim(traces_soma_and_basal['train of brief stimuli'][freq]['T'][start_index_AP1[freq]], traces_soma_and_basal['train of brief stimuli'][freq]['T'][end_index_AP1[freq]])
+            axs2[i, 1].set_xlim(traces_soma_and_basal['train of brief stimuli'][freq]['T'][start_index_AP5[freq]], traces_soma_and_basal['train of brief stimuli'][freq]['T'][end_index_AP5[freq]])
+            axs2[i, 0].set_ylabel('membrane\n potential (mV)')
+        axs2[0, 0].set_title('First AP')
+        axs2[-1, 0].set_xlabel('time (ms)')
+        axs2[-1, 1].set_xlabel('time (ms)')
+        axs2[0, 1].set_title('Fifth AP')
+
+        lgd=axs2[0, 1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         fig2.suptitle('Basal dendrites')
         if self.save_all:
-            plt.savefig(self.path_figs + 'First_and_last_AP_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+            plt.savefig(self.path_figs + 'First_and_fifth_APs_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
     def extract_prediction_features(self, efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal):
@@ -771,30 +814,59 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         print("The figures are saved in the directory: ", self.path_figs)
 
-        fig1, axs1 = plt.subplots(len(list(traces_soma_and_apical['train of brief stimuli'].keys())), 1, sharex = True)
+        fig1, axs1 = plt.subplots(len(list(traces_soma_and_apical['train of brief stimuli'].keys())), 1, sharex = True, sharey = True)
+        plt.subplots_adjust(hspace = 0.4)
 
         for i, freq in enumerate(list(traces_soma_and_apical['train of brief stimuli'].keys())):
             axs1[i].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
             for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
                  axs1[i].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
-            axs1[i].set_ylabel('membrane potential (mV)')
+            axs1[i].set_ylabel('membrane\n potential (mV)')
+            axs1[i].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i].transAxes)
         axs1[-1].set_xlabel('time (ms)')
+        fig1.suptitle('Brief current pulses to soma\n recorded at apical dendrites')
         lgd=axs1[0].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         if self.save_all:
             plt.savefig(self.path_figs + 'traces_pulses_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
         fig2, axs2 = plt.subplots(len(list(traces_soma_and_basal['train of brief stimuli'].keys())), 1, sharex = True)
+        plt.subplots_adjust(hspace = 0.4)
 
         for i, freq in enumerate(list(traces_soma_and_basal['train of brief stimuli'].keys())):
             axs2[i].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
             for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
                 axs2[i].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
-            axs2[i].set_ylabel('membrane potential (mV)')
+            axs2[i].set_ylabel('membrane\n potential (mV)')
+            axs2[i].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs2[i].transAxes)
         axs2[-1].set_xlabel('time (ms)')
+        fig2.suptitle('Brief current pulses to soma\n recorded at basal dendrites')
         lgd=axs2[0].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         if self.save_all:
             plt.savefig(self.path_figs + 'traces_pulses_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+        plt.figure()
+        plt.plot(traces_soma_and_apical['long stimulus']['T'],traces_soma_and_apical['long stimulus']['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_apical['long stimulus']['v_rec'].items():
+            plt.plot(traces_soma_and_apical['long stimulus']['T'],traces_soma_and_apical['long stimulus']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+        plt.xlabel('time (ms)')
+        plt.ylabel('membrane potential (mV)')
+        plt.title('Long rheobase current to soma\n recorded at apical dendrites')
+        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'traces_long_rheobase_input_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+        plt.figure()
+        plt.plot(traces_soma_and_basal['long stimulus']['T'],traces_soma_and_basal['long stimulus']['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_basal['long stimulus']['v_rec'].items():
+            plt.plot(traces_soma_and_basal['long stimulus']['T'],traces_soma_and_basal['long stimulus']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+        plt.xlabel('time (ms)')
+        plt.ylabel('membrane potential (mV)')
+        plt.title('Long rheobase current to soma\n recorded at basal dendrites')
+        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'traces_long_rheobase_input_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
     '''
@@ -861,11 +933,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         plt.close('all') #needed to avoid overlapping of saved images when the test is run on multiple models
 
-        '''
-        pool = multiprocessing.Pool(1, maxtasksperchild = 1)
-        traces = pool.apply(self.cclamp, args = (model, amplitude, delay, duration, "soma", 0.5, dend_locations))
-        # print(traces)
-        '''
+
         pool = multiprocessing.Pool(self.npool, maxtasksperchild=1)
         current_pulses_ = functools.partial(self.current_pulses, model, amp, delay, dur_of_pulse, dur_of_stim, num_of_pulses, "soma", 0.5, dend_locations)
         traces_train = pool.map(current_pulses_ , frequencies, chunksize=1)
@@ -880,10 +948,12 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         traces_soma_and_basal = collections.OrderedDict() 
         traces_soma_and_basal['train of brief stimuli'] = collections.OrderedDict()
+        traces_soma_and_basal['long stimulus'] = collections.OrderedDict()
         # traces_soma_and_basal['train of brief stimuli']['T'] = traces_train['T'] 
 
         traces_soma_and_apical = collections.OrderedDict() 
         traces_soma_and_apical['train of brief stimuli'] = collections.OrderedDict()
+        traces_soma_and_apical['long stimulus'] = collections.OrderedDict()
         # traces_soma_and_apical['train of brief stimuli']['T'] = traces_train['T'] 
 
         for i, freq in enumerate(frequencies):
@@ -902,7 +972,37 @@ class BackpropagatingAPTest_CA3_PC(Test):
                     traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].update({key:value})
 
         # print(traces_soma_and_apical)
-        # print(traces_soma_and_basal)       
+        # print(traces_soma_and_basal)    
+
+        '''
+        TODO
+        amplitude = self.find_rheobase()
+        ''' 
+        amplitude = 0.6
+        delay_long = self.config['long stimulus']['delay'] 
+        duration_long = self.config['long stimulus']['duration']
+
+        pool = multiprocessing.Pool(1, maxtasksperchild = 1)
+        traces = pool.apply(self.long_rheobase_input, args = (model, amplitude, delay_long, duration_long, "soma", 0.5, dend_locations))
+        pool.terminate()
+        pool.join()
+        del pool
+        # print(traces)
+
+        traces_soma_and_apical['long stimulus'].update({'v_rec' : {}})
+        traces_soma_and_apical['long stimulus'].update({'v_stim' : traces['v_stim']})
+        traces_soma_and_apical['long stimulus'].update({'T' : traces['T']})
+
+        traces_soma_and_basal['long stimulus'].update({'v_rec' : {}})
+        traces_soma_and_basal['long stimulus'].update({'v_stim' : traces['v_stim']})
+        traces_soma_and_basal['long stimulus'].update({'T' : traces['T']})
+
+        for key, value in traces['v_rec'].items():
+            if list(key) in apical_locations:
+               traces_soma_and_apical['long stimulus']['v_rec'].update({key:value}) 
+            if list(key) in basal_locations:
+               traces_soma_and_basal['long stimulus']['v_rec'].update({key:value})
+  
 
         filepath = self.path_results + self.test_log_filename
         self.logFile = open(filepath, 'w') # if it is opened before multiprocessing, the multiporeccing won't work under python3
@@ -913,15 +1013,17 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
         self.plot_traces(model, traces_soma_and_apical, traces_soma_and_basal, apical_locations_distances, basal_locations_distances)
-        """ Till this point  works for pulses stimuli"""
 
-        efel_features_somatic, efel_features_apical, efel_features_basal = self.extract_features_by_eFEL(traces_soma_and_apical, traces_soma_and_basal, delay, duration)
+
+        efel_features_somatic, efel_features_apical, efel_features_basal = self.extract_features_by_eFEL(traces_soma_and_apical, traces_soma_and_basal, delay, dur_of_stim, delay_long, duration_long, frequencies)
 
         # print(efel_features_somatic, efel_features_apical, efel_features_basal)
 
-        time_indices_befor_and_after_somatic_AP = self.get_time_indices_befor_and_after_somatic_AP(efel_features_somatic, traces_soma_and_apical)
+        time_indices_befor_and_after_somatic_AP = self.get_time_indices_befor_and_after_somatic_AP(efel_features_somatic, traces_soma_and_apical, frequencies)
 
-        self.plot_AP1_APlast(time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal)
+        self.plot_AP1_AP5(time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal, frequencies)
+
+        """ Till this point  it works . Except that the determination of rheobase is missing"""
 
         features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal)
 
