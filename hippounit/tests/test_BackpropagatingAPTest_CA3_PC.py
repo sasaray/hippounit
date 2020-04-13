@@ -205,9 +205,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
     def long_rheobase_input(self, model, amp, delay, dur, section_stim, loc_stim, dend_locations):
 
         if self.base_directory:
-            self.path_temp_data = self.base_directory + 'temp_data/' + 'backpropagating_AP_BC/' + model.name + '/'
+            self.path_temp_data = self.base_directory + 'temp_data/' + 'backpropagating_AP_CA3_PC/' + model.name + '/'
         else:
-            self.path_temp_data = model.base_directory + 'temp_data/' + 'backpropagating_AP_BC/'
+            self.path_temp_data = model.base_directory + 'temp_data/' + 'backpropagating_AP_CA3_PC/'
 
 
         try:
@@ -239,9 +239,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
     def current_pulses(self, model, amp, delay, dur_of_pulse, dur_of_stim, num_of_pulses, section_stim, loc_stim, dend_locations, frequency):
 
         if self.base_directory:
-            self.path_temp_data = self.base_directory + 'temp_data/' + 'backpropagating_AP_BC/' + model.name + '/'
+            self.path_temp_data = self.base_directory + 'temp_data/' + 'backpropagating_AP_CA3_PC/' + model.name + '/'
         else:
-            self.path_temp_data = model.base_directory + 'temp_data/' + 'backpropagating_AP_BC/'
+            self.path_temp_data = model.base_directory + 'temp_data/' + 'backpropagating_AP_CA3_PC/'
 
 
         try:
@@ -273,45 +273,45 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
 
-        traces_results_soma = {'train of brief stimuli' : {}, 'long stimulus' : None} 
-        traces_results_apical = {'train of brief stimuli' : {}, 'long stimulus' : {}}
-        traces_results_basal = {'train of brief stimuli' : {}, 'long stimulus' : {}}
+        traces_results_soma = {'train of brief inputs' : {}, 'long input' : None} 
+        traces_results_apical = {'train of brief inputs' : {}, 'long input' : {}}
+        traces_results_basal = {'train of brief inputs' : {}, 'long input' : {}}
 
 
         ''' brief pulses stim'''
         for freq in frequencies: 
 
-            traces_results_soma['train of brief stimuli'][freq] = {} 
-            traces_results_apical['train of brief stimuli'][freq] = {} 
-            traces_results_basal['train of brief stimuli'][freq] = {} 
+            traces_results_soma['train of brief inputs'][freq] = {} 
+            traces_results_apical['train of brief inputs'][freq] = {} 
+            traces_results_basal['train of brief inputs'][freq] = {} 
 
             # soma
             trace_soma = {}
             traces_soma=[]
-            trace_soma['T'] = traces_soma_and_apical['train of brief stimuli'][freq]['T']
-            trace_soma['V'] = traces_soma_and_apical['train of brief stimuli'][freq]['v_stim']
+            trace_soma['T'] = traces_soma_and_apical['train of brief inputs'][freq]['T']
+            trace_soma['V'] = traces_soma_and_apical['train of brief inputs'][freq]['v_stim']
             trace_soma['stim_start'] = [delay]
             trace_soma['stim_end'] = [delay + dur_of_stim]
             traces_soma.append(trace_soma)
-            traces_results_soma['train of brief stimuli'][freq] = efel.getFeatureValues(traces_soma, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+            traces_results_soma['train of brief inputs'][freq] = efel.getFeatureValues(traces_soma, ['AP_amplitude','AP_rise_rate', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
 
             #apical
-            for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
+            for key, value in traces_soma_and_apical['train of brief inputs'][freq]['v_rec'].items():
                 trace = {}
                 traces_for_efel=[]
-                trace['T'] = traces_soma_and_apical['train of brief stimuli'][freq]['T']
+                trace['T'] = traces_soma_and_apical['train of brief inputs'][freq]['T']
                 trace['V'] = value
                 trace['stim_start'] = [delay]
                 trace['stim_end'] = [delay + dur_of_stim]
                 traces_for_efel.append(trace)
                 traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
-                traces_results_apical['train of brief stimuli'][freq].update({key : traces_results}) 
+                traces_results_apical['train of brief inputs'][freq].update({key : traces_results}) 
 
             #basal
-            for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
+            for key, value in traces_soma_and_basal['train of brief inputs'][freq]['v_rec'].items():
                 trace = {}
                 traces_for_efel=[]
-                trace['T'] = traces_soma_and_basal['train of brief stimuli'][freq]['T']
+                trace['T'] = traces_soma_and_basal['train of brief inputs'][freq]['T']
                 trace['V'] = value
                 trace['stim_start'] = [delay]
                 trace['stim_end'] = [delay + dur_of_stim]
@@ -319,27 +319,27 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
                 traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
-                traces_results_basal['train of brief stimuli'][freq].update({key : traces_results})
+                traces_results_basal['train of brief inputs'][freq].update({key : traces_results})
 
 
-        ''' long stimulus '''
+        ''' long input '''
         # soma
         trace_soma = {}
         traces_soma=[]
-        trace_soma['T'] = traces_soma_and_apical['long stimulus']['T']
-        trace_soma['V'] = traces_soma_and_apical['long stimulus']['v_stim']
+        trace_soma['T'] = traces_soma_and_apical['long input']['T']
+        trace_soma['V'] = traces_soma_and_apical['long input']['v_stim']
         trace_soma['stim_start'] = [delay_long]
         trace_soma['stim_end'] = [delay_long + duration_long]
         traces_soma.append(trace_soma)
 
 
-        traces_results_soma['long stimulus'] = efel.getFeatureValues(traces_soma, ['AP_amplitude', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
+        traces_results_soma['long input'] = efel.getFeatureValues(traces_soma, ['AP_amplitude', 'AP_duration_half_width', 'inv_first_ISI','AP_begin_time', 'doublet_ISI'])
    
         #apical
-        for key, value in traces_soma_and_apical['long stimulus']['v_rec'].items():
+        for key, value in traces_soma_and_apical['long input']['v_rec'].items():
             trace = {}
             traces_for_efel=[]
-            trace['T'] = traces_soma_and_apical['long stimulus']['T']
+            trace['T'] = traces_soma_and_apical['long input']['T']
             trace['V'] = value
             trace['stim_start'] = [delay_long]
             trace['stim_end'] = [delay_long + duration_long]
@@ -347,13 +347,13 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
             traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
-            traces_results_apical['long stimulus'][key] = traces_results
+            traces_results_apical['long input'][key] = traces_results
 
         #basal 
-        for key, value in traces_soma_and_basal['long stimulus']['v_rec'].items():
+        for key, value in traces_soma_and_basal['long input']['v_rec'].items():
             trace = {}
             traces_for_efel=[]
-            trace['T'] = traces_soma_and_basal['long stimulus']['T']
+            trace['T'] = traces_soma_and_basal['long input']['T']
             trace['V'] = value
             trace['stim_start'] = [delay_long]
             trace['stim_end'] = [delay_long + duration_long]
@@ -361,7 +361,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
             traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
-            traces_results_basal['long stimulus'][key] = traces_results 
+            traces_results_basal['long input'][key] = traces_results 
 
 
         return traces_results_soma, traces_results_apical, traces_results_basal
@@ -375,21 +375,21 @@ class BackpropagatingAPTest_CA3_PC(Test):
         end_index_AP5 = {}
 
         for freq in frequencies:
-            soma_AP_begin_time = efel_features_somatic['train of brief stimuli'][freq][0]['AP_begin_time']
-            soma_first_ISI = efel_features_somatic['train of brief stimuli'][freq][0]['doublet_ISI'][0]
-            s_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= (soma_AP_begin_time[0]-1.0))
+            soma_AP_begin_time = efel_features_somatic['train of brief inputs'][freq][0]['AP_begin_time']
+            soma_first_ISI = efel_features_somatic['train of brief inputs'][freq][0]['doublet_ISI'][0]
+            s_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief inputs'][freq]['T'] >= (soma_AP_begin_time[0]-1.0))
             if 10 < soma_first_ISI:
                 plus = 10
             else:
                 plus = soma_first_ISI-3
-            e_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= (soma_AP_begin_time[0]+plus))
+            e_indices_AP1 = numpy.where(traces_soma_and_apical['train of brief inputs'][freq]['T'] >= (soma_AP_begin_time[0]+plus))
             start_index_AP1[freq] = s_indices_AP1[0][0]
             end_index_AP1[freq] = e_indices_AP1[0][0]
             #print start_index_AP1
             #print end_index_AP1
 
-            s_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= soma_AP_begin_time[4]-1.0)
-            e_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief stimuli'][freq]['T'] >= soma_AP_begin_time[4]+10)
+            s_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief inputs'][freq]['T'] >= soma_AP_begin_time[4]-1.0)
+            e_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief inputs'][freq]['T'] >= soma_AP_begin_time[4]+10)
             start_index_AP5[freq] = s_indices_AP5[0][0]
             end_index_AP5[freq] = e_indices_AP5[0][0]
         print (start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5)
@@ -403,16 +403,16 @@ class BackpropagatingAPTest_CA3_PC(Test):
         fig1, axs1 = plt.subplots(len(frequencies),2, sharey = True)
         plt.subplots_adjust(wspace = 0.4, hspace = 0.4 )
         for i, freq in enumerate(frequencies):
-            axs1[i, 0].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r')
-            axs1[i, 1].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
+            axs1[i, 0].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_stim'], 'r')
+            axs1[i, 1].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_stim'], 'r', label = 'soma')
             axs1[i, 0].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,0].transAxes)
             axs1[i, 1].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,1].transAxes)
-            for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
-                axs1[i, 0].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key])
-                axs1[i, 1].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+            for key, value in traces_soma_and_apical['train of brief inputs'][freq]['v_rec'].items():
+                axs1[i, 0].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_rec'][key])
+                axs1[i, 1].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
 
-            axs1[i, 0].set_xlim(traces_soma_and_apical['train of brief stimuli'][freq]['T'][start_index_AP1[freq]], traces_soma_and_apical['train of brief stimuli'][freq]['T'][end_index_AP1[freq]])
-            axs1[i, 1].set_xlim(traces_soma_and_apical['train of brief stimuli'][freq]['T'][start_index_AP5[freq]], traces_soma_and_apical['train of brief stimuli'][freq]['T'][end_index_AP5[freq]])
+            axs1[i, 0].set_xlim(traces_soma_and_apical['train of brief inputs'][freq]['T'][start_index_AP1[freq]], traces_soma_and_apical['train of brief inputs'][freq]['T'][end_index_AP1[freq]])
+            axs1[i, 1].set_xlim(traces_soma_and_apical['train of brief inputs'][freq]['T'][start_index_AP5[freq]], traces_soma_and_apical['train of brief inputs'][freq]['T'][end_index_AP5[freq]])
             axs1[i, 0].set_ylabel('membrane\n  potential (mV)')
         axs1[0, 0].set_title('First AP')
         axs1[-1, 0].set_xlabel('time (ms)')
@@ -428,15 +428,15 @@ class BackpropagatingAPTest_CA3_PC(Test):
         fig2, axs2 = plt.subplots(len(frequencies),2, sharey=True)
         plt.subplots_adjust(wspace = 0.4, hspace = 0.6)
         for i, freq in enumerate(frequencies):
-            axs2[i, 0].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r')
-            axs2[i, 1].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
+            axs2[i, 0].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_stim'], 'r')
+            axs2[i, 1].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_stim'], 'r', label = 'soma')
             axs2[i, 0].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,0].transAxes)
             axs2[i, 1].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i,1].transAxes)
-            for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
-                axs2[i, 0].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key])
-                axs2[i, 1].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
-            axs2[i, 0].set_xlim(traces_soma_and_basal['train of brief stimuli'][freq]['T'][start_index_AP1[freq]], traces_soma_and_basal['train of brief stimuli'][freq]['T'][end_index_AP1[freq]])
-            axs2[i, 1].set_xlim(traces_soma_and_basal['train of brief stimuli'][freq]['T'][start_index_AP5[freq]], traces_soma_and_basal['train of brief stimuli'][freq]['T'][end_index_AP5[freq]])
+            for key, value in traces_soma_and_basal['train of brief inputs'][freq]['v_rec'].items():
+                axs2[i, 0].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_rec'][key])
+                axs2[i, 1].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+            axs2[i, 0].set_xlim(traces_soma_and_basal['train of brief inputs'][freq]['T'][start_index_AP1[freq]], traces_soma_and_basal['train of brief inputs'][freq]['T'][end_index_AP1[freq]])
+            axs2[i, 1].set_xlim(traces_soma_and_basal['train of brief inputs'][freq]['T'][start_index_AP5[freq]], traces_soma_and_basal['train of brief inputs'][freq]['T'][end_index_AP5[freq]])
             axs2[i, 0].set_ylabel('membrane\n potential (mV)')
         axs2[0, 0].set_title('First AP')
         axs2[-1, 0].set_xlabel('time (ms)')
@@ -449,85 +449,102 @@ class BackpropagatingAPTest_CA3_PC(Test):
             plt.savefig(self.path_figs + 'First_and_fifth_APs_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
-    def extract_prediction_features(self, efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal):
+    def extract_prediction_features(self, efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal, frequencies):
 
-
-        features = {'soma' : { 'AP_amplitude' : numpy.mean(efel_features_somatic[0]['AP_amplitude'])*mV,
-                              'AP_half_duration' : numpy.mean(efel_features_somatic[0]['AP_duration_half_width'])*ms,
-                              'AP_rise_slope' : (numpy.mean(efel_features_somatic[0]['AP_rise_rate'])/1000.0)*V/ms},  # converting from V/s to V/ms 
-                    'apical' : collections.OrderedDict(),
-                    'basal' : collections.OrderedDict()
+        features = {'soma' : {'long input' : {'AP amplitude' : efel_features_somatic['long input'][0]['AP_amplitude'][0]*mV,
+                                              'AP half-duration' : efel_features_somatic['long input'][0]['AP_duration_half_width'][0]*ms},
+                              'train of brief inputs' : {}},
+                    'apical' : {'long input' : {}, 
+                                'train of brief inputs' :{}},
+                    'basal' : {'long input' : {}, 
+                               'train of brief inputs' :{}}  
                     }  
 
-        features_to_json = {'soma' : { 'AP_amplitude' : str(numpy.mean(efel_features_somatic[0]['AP_amplitude'])*mV),
-                              'AP_half_duration' : str(numpy.mean(efel_features_somatic[0]['AP_duration_half_width'])*ms),
-                              'AP_rise_slope' : str((numpy.mean(efel_features_somatic[0]['AP_rise_rate'])/1000.0)*V/ms)},  # converting from V/s to V/ms 
-                    'apical' :collections.OrderedDict(),
-                    'basal' :collections.OrderedDict()
+        features_to_json = {'soma' : {'long input' : {'AP amplitude' : str(efel_features_somatic['long input'][0]['AP_amplitude'][0]*mV),
+                                                      'AP half-duration' : str(efel_features_somatic['long input'][0]['AP_duration_half_width'][0]*ms)},
+                                      'train of brief inputs' :{}},
+                    'apical' : {'long input' : {},
+                                'train of brief inputs' :{}},
+                    'basal' : {'long input' : {}, 
+                               'train of brief inputs' :{}}  
                     } 
 
-        for key, value in efel_features_apical.items():
-            features['apical'].update({key :{ 'distance' : apical_locations_distances[key], 
-                                              'AP1_amplitude' : value[0]['AP_amplitude'][0]*mV,
-                                              'AP1_half_duration' : value[0]['AP_duration_half_width'][0]*ms,
-                                              'AP1_rise_slope' : (value[0]['AP_rise_rate'][0]/1000.0)*V/ms,
-                                              'APlast_amplitude' : value[0]['AP_amplitude'][-1]*mV,
-                                              'APlast_half_duration' : value[0]['AP_duration_half_width'][-1]*ms,
-                                              'APlast_rise_slope' : (value[0]['AP_rise_rate'][-1]/1000.0)*V/ms
+        for key, value in efel_features_apical['long input'].items():
+            features['apical']['long input'].update({key : {}}) 
+            features['apical']['long input'][key].update({'AP amplitude' : value[0]['AP_amplitude'][0]*mV}) 
+            features['apical']['long input'][key].update({'AP half-duration' : value[0]['AP_duration_half_width'][0]*mV})
+
+            features_to_json['apical']['long input'].update({str(key) : {}}) 
+            features_to_json['apical']['long input'][str(key)].update({'AP amplitude' : str(value[0]['AP_amplitude'][0]*mV)}) 
+            features_to_json['apical']['long input'][str(key)].update({'AP half-duration' : str(value[0]['AP_duration_half_width'][0]*mV)})
+
+        for key, value in efel_features_basal['long input'].items():
+            features['basal']['long input'].update({key : {}}) 
+            features['basal']['long input'][key].update({'AP amplitude' : value[0]['AP_amplitude'][0]*mV}) 
+            features['basal']['long input'][key].update({'AP half-duration' : value[0]['AP_duration_half_width'][0]*mV})
+
+            features_to_json['basal']['long input'].update({str(key) : {}}) 
+            features_to_json['basal']['long input'][str(key)].update({'AP amplitude' : str(value[0]['AP_amplitude'][0]*mV)}) 
+            features_to_json['basal']['long input'][str(key)].update({'AP half-duration' : str(value[0]['AP_duration_half_width'][0]*mV)})
+
+        for freq in frequencies:
+            features['soma']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+            features['apical']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+            features['basal']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+
+            features_to_json['soma']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+            features_to_json['apical']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+            features_to_json['basal']['train of brief inputs'][str(freq) + ' Hz'] = {} 
+
+            features['soma']['train of brief inputs'][str(freq) + ' Hz'].update({'AP amplitude-AP5/AP1' : efel_features_somatic['train of brief inputs'][freq][0]['AP_amplitude'][4] / efel_features_somatic['train of brief inputs'][freq][0]['AP_amplitude'][0]})
+            features['soma']['train of brief inputs'][str(freq) + ' Hz'].update({'AP half-duration-AP5/AP1' : efel_features_somatic['train of brief inputs'][freq][0]['AP_duration_half_width'][4] / efel_features_somatic['train of brief inputs'][freq][0]['AP_duration_half_width'][0]}) 
+            
+            features_to_json['soma']['train of brief inputs'][str(freq) + ' Hz'].update({'AP amplitude-AP5/AP1' : str(efel_features_somatic['train of brief inputs'][freq][0]['AP_amplitude'][4] / efel_features_somatic['train of brief inputs'][freq][0]['AP_amplitude'][0])})
+            features_to_json['soma']['train of brief inputs'][str(freq) + ' Hz'].update({'AP half-duration-AP5/AP1' : str(efel_features_somatic['train of brief inputs'][freq][0]['AP_duration_half_width'][4] / efel_features_somatic['train of brief inputs'][freq][0]['AP_duration_half_width'][0])}) 
+
+            for key, value in efel_features_apical['train of brief inputs'][freq].items():
+                features['apical']['train of brief inputs'][str(freq) + ' Hz'].update({key :{ 'distance' : apical_locations_distances[key], 
+                                              'AP amplitude-AP5/AP1' : value[0]['AP_amplitude'][4] / value[0]['AP_amplitude'][0],
+                                              'AP half-duration-AP5/AP1' : value[0]['AP_duration_half_width'][4] / value[0]['AP_duration_half_width'][0],
                                              } 
                                         })
 
-            features_to_json['apical'].update({str(key ):{ 'distance' : apical_locations_distances[key], 
-                                              'AP1_amplitude' : str(value[0]['AP_amplitude'][0]*mV),
-                                              'AP1_half_duration' : str(value[0]['AP_duration_half_width'][0]*ms),
-                                              'AP1_rise_slope' : str((value[0]['AP_rise_rate'][0]/1000.0)*V/ms),
-                                              'APlast_amplitude' : str(value[0]['AP_amplitude'][-1]*mV),
-                                              'APlast_half_duration' : str(value[0]['AP_duration_half_width'][-1]*ms),
-                                              'APlast_rise_slope' : str((value[0]['AP_rise_rate'][-1]/1000.0)*V/ms)
+                features_to_json['apical']['train of brief inputs'][str(freq) + ' Hz'].update({str(key) :{ 'distance' : apical_locations_distances[key], 
+                                              'AP amplitude-AP5/AP1' : str(value[0]['AP_amplitude'][4] / value[0]['AP_amplitude'][0]),
+                                              'AP half-duration-AP5/AP1' : str(value[0]['AP_duration_half_width'][4] / value[0]['AP_duration_half_width'][0]),
+                                             } 
+                                        })
+ 
+            for key, value in efel_features_basal['train of brief inputs'][freq].items():
+                features['basal']['train of brief inputs'][str(freq) + ' Hz'].update({key:{ 'distance' : basal_locations_distances[key], 
+                                              'AP amplitude-AP5/AP1' : value[0]['AP_amplitude'][4] / value[0]['AP_amplitude'][0],
+                                              'AP half-duration-AP5/AP1' : value[0]['AP_duration_half_width'][4] / value[0]['AP_duration_half_width'][0],
                                              } 
                                         })
 
-        for key, value in efel_features_basal.items():
-            features['basal'].update({key : { 'distance' : basal_locations_distances[key],
-                                              'AP1_amplitude' : value[0]['AP_amplitude'][0]*mV,
-                                              'AP1_half_duration' : value[0]['AP_duration_half_width'][0]*ms,
-                                              'AP1_rise_slope' : (value[0]['AP_rise_rate'][0]/1000.0)*V/ms,
-                                              'APlast_amplitude' : value[0]['AP_amplitude'][-1]*mV,
-                                             'APlast_half_duration' : value[0]['AP_duration_half_width'][-1]*ms,
-                                              'APlast_rise_slope' : (value[0]['AP_rise_rate'][-1]/1000.0)*V/ms
-                                            } 
-                                        }) 
-
-
-            features_to_json['basal'].update({str(key) : { 'distance' : basal_locations_distances[key],
-                                              'AP1_amplitude' : str(value[0]['AP_amplitude'][0]*mV),
-                                              'AP1_half_duration' : str(value[0]['AP_duration_half_width'][0]*ms),
-                                              'AP1_rise_slope' : str((value[0]['AP_rise_rate'][0]/1000.0)*V/ms),
-                                              'APlast_amplitude' : str(value[0]['AP_amplitude'][-1]*mV),
-                                             'APlast_half_duration' : str(value[0]['AP_duration_half_width'][-1]*ms),
-                                              'APlast_rise_slope' : str((value[0]['AP_rise_rate'][-1]/1000.0)*V/ms)
-                                            } 
-                                        }) 
+                features_to_json['basal']['train of brief inputs'][str(freq) + ' Hz'].update({str(key) :{ 'distance' : basal_locations_distances[key], 
+                                              'AP amplitude-AP5/AP1' : str(value[0]['AP_amplitude'][4] / value[0]['AP_amplitude'][0]),
+                                              'AP half-duration-AP5/AP1' : str(value[0]['AP_duration_half_width'][4] / value[0]['AP_duration_half_width'][0]),
+                                             } 
+                                        })
 
         prediction = {'soma' : features['soma'],
                     'apical' :{},
                     'basal' :{}
                     }  
 
-        prediction_to_json = {'soma' : { 'AP_amplitude' : str(features['soma']['AP_amplitude']),
-                                         'AP_half_duration' : str(features['soma']['AP_half_duration']),
-                                         'AP_rise_slope' : str(features['soma']['AP_rise_slope'])},  # converting from V/s to V/ms 
-                              'apical' :collections.OrderedDict(),
-                              'basal' :collections.OrderedDict()
+        prediction_to_json = {'soma': features_to_json['soma'], 
+                              'apical' : {},
+                              'basal' : {}
                               } 
-
+        '''
+        for freq in frequencies:
         for dist in distances_apical:
-            AP1_amps = numpy.array([])
-            AP1_half_durs = numpy.array([])
-            AP1_rise_slopes = numpy.array([])
-            APlast_amps = numpy.array([])
-            APlast_half_durs = numpy.array([])
-            APlast_rise_slopes = numpy.array([])
+            AP_amps = numpy.array([])
+            AP_half_durs = numpy.array([])
+            AP_amps_fifth_firth_ratio = numpy.array([])
+            AP_half_durs_fifth_firth_ratio = numpy.array([])
+
             prediction['apical'].update({dist : collections.OrderedDict()})
             prediction_to_json['apical'].update({dist : collections.OrderedDict()})
 
@@ -597,15 +614,16 @@ class BackpropagatingAPTest_CA3_PC(Test):
                                               'APlast_half_duration' : {'mean': str(numpy.mean(APlast_half_durs)*ms), 'std' : str(numpy.std(APlast_half_durs)*ms)},
                                               'APlast_rise_slope' : {'mean': str(numpy.mean(APlast_rise_slopes)*V/ms ), 'std' : str(numpy.std(APlast_rise_slopes)*V/ms)}
                                              })
+        '''
 
-        file_name_features = self.path_results + 'bAP_BasketCell_model_features.json'
-        file_name_mean_features = self.path_results + 'bAP_BasketCell_mean_model_features.json'
+        file_name_features = self.path_results + 'bAP_CA3_PC_model_features.json'
+        file_name_mean_features = self.path_results + 'bAP_CA3_PC_mean_model_features.json'
         json.dump(features_to_json, open(file_name_features , "w"), indent=4)
         json.dump(prediction_to_json, open(file_name_mean_features , "w"), indent=4)
 
         if self.save_all:
-            file_name_features_p = self.path_results + 'bAP_BasketCell_model_features.p'
-            file_name_mean_features_p = self.path_results + 'bAP_BasketCell_mean_model_features.p'           
+            file_name_features_p = self.path_results + 'bAP_CA3_PC_model_features.p'
+            file_name_mean_features_p = self.path_results + 'bAP_CA3_PC_mean_model_features.p'           
             pickle.dump(features, gzip.GzipFile(file_name_features_p, "wb"))
             pickle.dump(prediction, gzip.GzipFile(file_name_mean_features_p, "wb"))
 
@@ -799,9 +817,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
         # TODO: somehow sort the traces by distance 
 
         if self.base_directory:
-            self.path_figs = self.base_directory + 'figs/' + 'backpropagating_AP_BC/' + model.name + '/'
+            self.path_figs = self.base_directory + 'figs/' + 'backpropagating_AP_CA3_PC/' + model.name + '/'
         else:
-            self.path_figs = model.base_directory + 'figs/' + 'backpropagating_AP_BC/'
+            self.path_figs = model.base_directory + 'figs/' + 'backpropagating_AP_CA3_PC/'
 
 
         try:
@@ -814,13 +832,13 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         print("The figures are saved in the directory: ", self.path_figs)
 
-        fig1, axs1 = plt.subplots(len(list(traces_soma_and_apical['train of brief stimuli'].keys())), 1, sharex = True, sharey = True)
+        fig1, axs1 = plt.subplots(len(list(traces_soma_and_apical['train of brief inputs'].keys())), 1, sharex = True, sharey = True)
         plt.subplots_adjust(hspace = 0.4)
 
-        for i, freq in enumerate(list(traces_soma_and_apical['train of brief stimuli'].keys())):
-            axs1[i].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
-            for key, value in traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].items():
-                 axs1[i].plot(traces_soma_and_apical['train of brief stimuli'][freq]['T'],traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+        for i, freq in enumerate(list(traces_soma_and_apical['train of brief inputs'].keys())):
+            axs1[i].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_apical['train of brief inputs'][freq]['v_rec'].items():
+                 axs1[i].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
             axs1[i].set_ylabel('membrane\n potential (mV)')
             axs1[i].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i].transAxes)
         axs1[-1].set_xlabel('time (ms)')
@@ -830,13 +848,13 @@ class BackpropagatingAPTest_CA3_PC(Test):
             plt.savefig(self.path_figs + 'traces_pulses_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
-        fig2, axs2 = plt.subplots(len(list(traces_soma_and_basal['train of brief stimuli'].keys())), 1, sharex = True)
+        fig2, axs2 = plt.subplots(len(list(traces_soma_and_basal['train of brief inputs'].keys())), 1, sharex = True)
         plt.subplots_adjust(hspace = 0.4)
 
-        for i, freq in enumerate(list(traces_soma_and_basal['train of brief stimuli'].keys())):
-            axs2[i].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_stim'], 'r', label = 'soma')
-            for key, value in traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].items():
-                axs2[i].plot(traces_soma_and_basal['train of brief stimuli'][freq]['T'],traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+        for i, freq in enumerate(list(traces_soma_and_basal['train of brief inputs'].keys())):
+            axs2[i].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_basal['train of brief inputs'][freq]['v_rec'].items():
+                axs2[i].plot(traces_soma_and_basal['train of brief inputs'][freq]['T'],traces_soma_and_basal['train of brief inputs'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
             axs2[i].set_ylabel('membrane\n potential (mV)')
             axs2[i].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs2[i].transAxes)
         axs2[-1].set_xlabel('time (ms)')
@@ -847,9 +865,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
         plt.figure()
-        plt.plot(traces_soma_and_apical['long stimulus']['T'],traces_soma_and_apical['long stimulus']['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_apical['long stimulus']['v_rec'].items():
-            plt.plot(traces_soma_and_apical['long stimulus']['T'],traces_soma_and_apical['long stimulus']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+        plt.plot(traces_soma_and_apical['long input']['T'],traces_soma_and_apical['long input']['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_apical['long input']['v_rec'].items():
+            plt.plot(traces_soma_and_apical['long input']['T'],traces_soma_and_apical['long input']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
         plt.xlabel('time (ms)')
         plt.ylabel('membrane potential (mV)')
         plt.title('Long rheobase current to soma\n recorded at apical dendrites')
@@ -858,9 +876,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
             plt.savefig(self.path_figs + 'traces_long_rheobase_input_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
         plt.figure()
-        plt.plot(traces_soma_and_basal['long stimulus']['T'],traces_soma_and_basal['long stimulus']['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_basal['long stimulus']['v_rec'].items():
-            plt.plot(traces_soma_and_basal['long stimulus']['T'],traces_soma_and_basal['long stimulus']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+        plt.plot(traces_soma_and_basal['long input']['T'],traces_soma_and_basal['long input']['v_stim'], 'r', label = 'soma')
+        for key, value in traces_soma_and_basal['long input']['v_rec'].items():
+            plt.plot(traces_soma_and_basal['long input']['T'],traces_soma_and_basal['long input']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
         plt.xlabel('time (ms)')
         plt.ylabel('membrane potential (mV)')
         plt.title('Long rheobase current to soma\n recorded at basal dendrites')
@@ -886,9 +904,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
         efel.reset()
 
         if self.base_directory:
-            self.path_results = self.base_directory + 'results/' + 'backpropagating_AP_BC/' + model.name + '/'
+            self.path_results = self.base_directory + 'results/' + 'backpropagating_AP_CA3_PC/' + model.name + '/'
         else:
-            self.path_results = model.base_directory + 'results/' + 'backpropagating_AP_BC/'
+            self.path_results = model.base_directory + 'results/' + 'backpropagating_AP_CA3_PC/'
 
         try:
             if not os.path.exists(self.path_results):
@@ -922,11 +940,11 @@ class BackpropagatingAPTest_CA3_PC(Test):
         dend_locations = apical_locations + basal_locations   # so the simulation is run only once, and record from alll the locations at the same time 
 
 
-        delay = self.config['train of brief stimuli']['delay']
-        dur_of_pulse = self.config['train of brief stimuli']['duration of single pulse']
-        amp = self.config['train of brief stimuli']['amplitude of pulses']
-        num_of_pulses = self.config['train of brief stimuli']['number of pulses']
-        frequencies = self.config['train of brief stimuli']['frequencies']
+        delay = self.config['train of brief inputs']['delay']
+        dur_of_pulse = self.config['train of brief inputs']['duration of single pulse']
+        amp = self.config['train of brief inputs']['amplitude of pulses']
+        num_of_pulses = self.config['train of brief inputs']['number of pulses']
+        frequencies = self.config['train of brief inputs']['frequencies']
 
         max_interval_bw_pulses = 1.0/ min(frequencies) * 1000.0
         dur_of_stim = num_of_pulses * max_interval_bw_pulses
@@ -942,34 +960,34 @@ class BackpropagatingAPTest_CA3_PC(Test):
         del pool
         # print(traces_train)
         '''
-        traces_all = {'long stimulus' : {},
-                      'train of brief stimuli' :{}}  
+        traces_all = {'long input' : {},
+                      'train of brief inputs' :{}}  
         '''
 
         traces_soma_and_basal = collections.OrderedDict() 
-        traces_soma_and_basal['train of brief stimuli'] = collections.OrderedDict()
-        traces_soma_and_basal['long stimulus'] = collections.OrderedDict()
-        # traces_soma_and_basal['train of brief stimuli']['T'] = traces_train['T'] 
+        traces_soma_and_basal['train of brief inputs'] = collections.OrderedDict()
+        traces_soma_and_basal['long input'] = collections.OrderedDict()
+        # traces_soma_and_basal['train of brief inputs']['T'] = traces_train['T'] 
 
         traces_soma_and_apical = collections.OrderedDict() 
-        traces_soma_and_apical['train of brief stimuli'] = collections.OrderedDict()
-        traces_soma_and_apical['long stimulus'] = collections.OrderedDict()
-        # traces_soma_and_apical['train of brief stimuli']['T'] = traces_train['T'] 
+        traces_soma_and_apical['train of brief inputs'] = collections.OrderedDict()
+        traces_soma_and_apical['long input'] = collections.OrderedDict()
+        # traces_soma_and_apical['train of brief inputs']['T'] = traces_train['T'] 
 
         for i, freq in enumerate(frequencies):
-            traces_soma_and_apical['train of brief stimuli'].update({freq : {'v_rec' : {}}}) 
-            traces_soma_and_basal['train of brief stimuli'].update({freq : {'v_rec' : {}}}) 
+            traces_soma_and_apical['train of brief inputs'].update({freq : {'v_rec' : {}}}) 
+            traces_soma_and_basal['train of brief inputs'].update({freq : {'v_rec' : {}}}) 
 
-            traces_soma_and_apical['train of brief stimuli'][freq].update({'v_stim' : traces_train[i]['v_stim']})
-            traces_soma_and_basal['train of brief stimuli'][freq].update({'v_stim' : traces_train[i]['v_stim']})
-            traces_soma_and_apical['train of brief stimuli'][freq].update({'T' : traces_train[i]['T']})
-            traces_soma_and_basal['train of brief stimuli'][freq].update({'T' : traces_train[i]['T']})
+            traces_soma_and_apical['train of brief inputs'][freq].update({'v_stim' : traces_train[i]['v_stim']})
+            traces_soma_and_basal['train of brief inputs'][freq].update({'v_stim' : traces_train[i]['v_stim']})
+            traces_soma_and_apical['train of brief inputs'][freq].update({'T' : traces_train[i]['T']})
+            traces_soma_and_basal['train of brief inputs'][freq].update({'T' : traces_train[i]['T']})
 
             for key, value in traces_train[i]['v_rec'].items():
                 if list(key) in apical_locations: 
-                    traces_soma_and_apical['train of brief stimuli'][freq]['v_rec'].update({key:value})
+                    traces_soma_and_apical['train of brief inputs'][freq]['v_rec'].update({key:value})
                 if list(key) in basal_locations:
-                    traces_soma_and_basal['train of brief stimuli'][freq]['v_rec'].update({key:value})
+                    traces_soma_and_basal['train of brief inputs'][freq]['v_rec'].update({key:value})
 
         # print(traces_soma_and_apical)
         # print(traces_soma_and_basal)    
@@ -979,8 +997,8 @@ class BackpropagatingAPTest_CA3_PC(Test):
         amplitude = self.find_rheobase()
         ''' 
         amplitude = 0.6
-        delay_long = self.config['long stimulus']['delay'] 
-        duration_long = self.config['long stimulus']['duration']
+        delay_long = self.config['long input']['delay'] 
+        duration_long = self.config['long input']['duration']
 
         pool = multiprocessing.Pool(1, maxtasksperchild = 1)
         traces = pool.apply(self.long_rheobase_input, args = (model, amplitude, delay_long, duration_long, "soma", 0.5, dend_locations))
@@ -989,19 +1007,19 @@ class BackpropagatingAPTest_CA3_PC(Test):
         del pool
         # print(traces)
 
-        traces_soma_and_apical['long stimulus'].update({'v_rec' : {}})
-        traces_soma_and_apical['long stimulus'].update({'v_stim' : traces['v_stim']})
-        traces_soma_and_apical['long stimulus'].update({'T' : traces['T']})
+        traces_soma_and_apical['long input'].update({'v_rec' : {}})
+        traces_soma_and_apical['long input'].update({'v_stim' : traces['v_stim']})
+        traces_soma_and_apical['long input'].update({'T' : traces['T']})
 
-        traces_soma_and_basal['long stimulus'].update({'v_rec' : {}})
-        traces_soma_and_basal['long stimulus'].update({'v_stim' : traces['v_stim']})
-        traces_soma_and_basal['long stimulus'].update({'T' : traces['T']})
+        traces_soma_and_basal['long input'].update({'v_rec' : {}})
+        traces_soma_and_basal['long input'].update({'v_stim' : traces['v_stim']})
+        traces_soma_and_basal['long input'].update({'T' : traces['T']})
 
         for key, value in traces['v_rec'].items():
             if list(key) in apical_locations:
-               traces_soma_and_apical['long stimulus']['v_rec'].update({key:value}) 
+               traces_soma_and_apical['long input']['v_rec'].update({key:value}) 
             if list(key) in basal_locations:
-               traces_soma_and_basal['long stimulus']['v_rec'].update({key:value})
+               traces_soma_and_basal['long input']['v_rec'].update({key:value})
   
 
         filepath = self.path_results + self.test_log_filename
@@ -1025,8 +1043,8 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         """ Till this point  it works . Except that the determination of rheobase is missing"""
 
-        features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal)
-
+        features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal, frequencies)
+        """Features are calculated and saved, prediction (feature means over distance ranges are not yet"""
 
         self.plot_features(features, prediction)
 
@@ -1040,7 +1058,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         score_avg, errors= scores.ZScore_backpropagatingAP_BasketCell.compute(observation,prediction)
 
-        file_name=self.path_results+'bAP_BC_errors.json'
+        file_name=self.path_results+'bAP_CA3_PC_errors.json'
 
         json.dump(errors, open(file_name, "w"), indent=4)
 
@@ -1056,7 +1074,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         score_json= {'Z_score_avg' : score_avg}
 
 
-        file_name_score = self.path_results + 'bAP_BC_final_score.json'
+        file_name_score = self.path_results + 'bAP_CA3_PC_final_score.json'
         json.dump(score_json, open(file_name_score, "w"), indent=4)
 
 

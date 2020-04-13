@@ -1,9 +1,9 @@
 {
-"long stimulus": {
+"long input": {
   "delay" : 500,
   "duration": 1000
 },
-"train of brief stimuli" : {
+"train of brief inputs" : {
   "delay" : 500,
   "frequencies": [20, 50, 100] ,
   "duration of single pulse" : 2,
