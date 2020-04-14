@@ -473,19 +473,23 @@ class BackpropagatingAPTest_CA3_PC(Test):
             features['apical']['long input'].update({key : {}}) 
             features['apical']['long input'][key].update({'AP amplitude' : value[0]['AP_amplitude'][0]*mV}) 
             features['apical']['long input'][key].update({'AP half-duration' : value[0]['AP_duration_half_width'][0]*mV})
+            features['apical']['long input'][key].update({'distance' :apical_locations_distances[key]})
 
             features_to_json['apical']['long input'].update({str(key) : {}}) 
             features_to_json['apical']['long input'][str(key)].update({'AP amplitude' : str(value[0]['AP_amplitude'][0]*mV)}) 
             features_to_json['apical']['long input'][str(key)].update({'AP half-duration' : str(value[0]['AP_duration_half_width'][0]*mV)})
+            features_to_json['apical']['long input'][str(key)].update({'distance' :apical_locations_distances[key]})
 
         for key, value in efel_features_basal['long input'].items():
             features['basal']['long input'].update({key : {}}) 
             features['basal']['long input'][key].update({'AP amplitude' : value[0]['AP_amplitude'][0]*mV}) 
             features['basal']['long input'][key].update({'AP half-duration' : value[0]['AP_duration_half_width'][0]*mV})
+            features['basal']['long input'][key].update({'distance' : basal_locations_distances[key]})
 
             features_to_json['basal']['long input'].update({str(key) : {}}) 
             features_to_json['basal']['long input'][str(key)].update({'AP amplitude' : str(value[0]['AP_amplitude'][0]*mV)}) 
             features_to_json['basal']['long input'][str(key)].update({'AP half-duration' : str(value[0]['AP_duration_half_width'][0]*mV)})
+            features_to_json['basal']['long input'][str(key)].update({'distance' : basal_locations_distances[key]})
 
         for freq in frequencies:
             features['soma']['train of brief inputs'][str(freq) + ' Hz'] = {} 
@@ -527,94 +531,122 @@ class BackpropagatingAPTest_CA3_PC(Test):
                                               'AP half-duration-AP5/AP1' : str(value[0]['AP_duration_half_width'][4] / value[0]['AP_duration_half_width'][0]),
                                              } 
                                         })
-
         prediction = {'soma' : features['soma'],
-                    'apical' :{},
-                    'basal' :{}
+                      'apical' : {'long input' : {}, 
+                                  'train of brief inputs' :{}},
+                      'basal' : {'long input' : {}, 
+                                 'train of brief inputs' :{}}  
                     }  
 
         prediction_to_json = {'soma': features_to_json['soma'], 
-                              'apical' : {},
-                              'basal' : {}
+                              'apical' : {'long input' : {}, 
+                                          'train of brief inputs' :{}},
+                               'basal' : {'long input' : {}, 
+                                          'train of brief inputs' :{}}  
                               } 
-        '''
-        for freq in frequencies:
+
         for dist in distances_apical:
             AP_amps = numpy.array([])
             AP_half_durs = numpy.array([])
-            AP_amps_fifth_firth_ratio = numpy.array([])
-            AP_half_durs_fifth_firth_ratio = numpy.array([])
 
-            prediction['apical'].update({dist : collections.OrderedDict()})
-            prediction_to_json['apical'].update({dist : collections.OrderedDict()})
 
-            for key, value in features['apical'].items():
+            prediction['apical']['long input'].update({dist : collections.OrderedDict()})
+            prediction_to_json['apical']['long input'].update({dist : collections.OrderedDict()})
+
+            for key, value in features['apical']['long input'].items():
  
                 if value['distance'] >= dist - tolerance_apical and  value['distance'] < dist + tolerance_apical:
-      
+                    
 
-                    AP1_amps = numpy.append(AP1_amps, value['AP1_amplitude'])
-                    AP1_half_durs = numpy.append(AP1_half_durs, value['AP1_half_duration']) 
-                    AP1_rise_slopes = numpy.append(AP1_rise_slopes, value['AP1_rise_slope']) 
-                    APlast_amps = numpy.append(AP1_amps, value['APlast_amplitude'])
-                    APlast_half_durs = numpy.append(AP1_half_durs, value['APlast_half_duration']) 
-                    APlast_rise_slopes = numpy.append(AP1_rise_slopes, value['APlast_rise_slope']) 
-            prediction['apical'][dist].update({  
-                                              'AP1_amplitude' : {'mean': numpy.mean(AP1_amps)*mV, 'std' : numpy.std(AP1_amps)*mV}, 
-                                              'AP1_half_duration' : {'mean': numpy.mean(AP1_half_durs)*ms , 'std' : numpy.std(AP1_half_durs)*ms},
-                                              'AP1_rise_slope' : {'mean': numpy.mean(AP1_rise_slopes)*V/ms, 'std' : numpy.std(AP1_rise_slopes)*V/ms},
-                                              'APlast_amplitude' : {'mean': numpy.mean(APlast_amps)*mV, 'std' : numpy.std(APlast_amps)*mV},
-                                              'APlast_half_duration' : {'mean': numpy.mean(APlast_half_durs)*ms, 'std' : numpy.std(APlast_half_durs)*ms},
-                                              'APlast_rise_slope' : {'mean': numpy.mean(APlast_rise_slopes)*V/ms, 'std' : numpy.std(APlast_rise_slopes)*V/ms}
+                    AP_amps = numpy.append(AP_amps, value['AP amplitude'])
+                    AP_half_durs = numpy.append(AP_half_durs, value['AP half-duration']) 
+
+            prediction['apical']['long input'][dist].update({  
+                                              'AP amplitude' : {'mean': numpy.mean(AP_amps)*mV, 'std' : numpy.std(AP_amps)*mV}, 
+                                              'AP half-duration' : {'mean': numpy.mean(AP_half_durs)*ms , 'std' : numpy.std(AP_half_durs)*ms}
+                                             })
+            prediction_to_json['apical']['long input'][dist].update({  
+                                              'AP amplitude' : {'mean': str(numpy.mean(AP_amps)*mV), 'std' : str(numpy.std(AP_amps)*mV)}, 
+                                              'AP half-duration' : {'mean': str(numpy.mean(AP_half_durs)*ms) , 'std' : str(numpy.std(AP_half_durs)*ms)}
                                              })
 
-            prediction_to_json['apical'][dist].update({  
-                                              'AP1_amplitude' : {'mean': str(numpy.mean(AP1_amps)*mV), 'std' : str(numpy.std(AP1_amps)*mV)}, 
-                                              'AP1_half_duration' : {'mean': str(numpy.mean(AP1_half_durs)*ms), 'std' : str(numpy.std(AP1_half_durs)*ms)},
-                                              'AP1_rise_slope' : {'mean': str(numpy.mean(AP1_rise_slopes)*V/ms), 'std' : str(numpy.std(AP1_rise_slopes)*V/ms)},
-                                              'APlast_amplitude' : {'mean': str(numpy.mean(APlast_amps)*mV), 'std' : str(numpy.std(APlast_amps)*mV)},
-                                              'APlast_half_duration' : {'mean': str(numpy.mean(APlast_half_durs)*ms), 'std' : str(numpy.std(APlast_half_durs)*ms)},
-                                              'APlast_rise_slope' : {'mean': str(numpy.mean(APlast_rise_slopes)*V/ms), 'std' : str(numpy.std(APlast_rise_slopes)*V/ms)}
-                                             })
-                                     
         for dist in distances_basal:
-            AP1_amps = numpy.array([])
-            AP1_half_durs = numpy.array([])
-            AP1_rise_slopes = numpy.array([])
-            APlast_amps = numpy.array([])
-            APlast_half_durs = numpy.array([])
-            APlast_rise_slopes = numpy.array([])
-            prediction['basal'].update({dist : collections.OrderedDict()})
-            prediction_to_json['basal'].update({dist : collections.OrderedDict()}) 
+            AP_amps = numpy.array([])
+            AP_half_durs = numpy.array([])
 
-            for key, value in features['basal'].items():
+
+            prediction['basal']['long input'].update({dist : collections.OrderedDict()})
+            prediction_to_json['basal']['long input'].update({dist : collections.OrderedDict()})
+
+            for key, value in features['basal']['long input'].items():
  
                 if value['distance'] >= dist - tolerance_basal and  value['distance'] < dist + tolerance_basal:
       
 
-                    AP1_amps = numpy.append(AP1_amps, value['AP1_amplitude'])
-                    AP1_half_durs = numpy.append(AP1_half_durs, value['AP1_half_duration']) 
-                    AP1_rise_slopes = numpy.append(AP1_rise_slopes, value['AP1_rise_slope']) 
-                    APlast_amps = numpy.append(AP1_amps, value['APlast_amplitude'])
-                    APlast_half_durs = numpy.append(AP1_half_durs, value['APlast_half_duration']) 
-                    APlast_rise_slopes = numpy.append(AP1_rise_slopes, value['APlast_rise_slope']) 
-            prediction['basal'][dist].update({  
-                                              'AP1_amplitude' : {'mean': numpy.mean(AP1_amps)*mV, 'std' : numpy.std(AP1_amps)*mV}, 
-                                              'AP1_half_duration' : {'mean': numpy.mean(AP1_half_durs)*ms, 'std' : numpy.std(AP1_half_durs)*ms},
-                                              'AP1_rise_slope' : {'mean': numpy.mean(AP1_rise_slopes)*V/ms, 'std' : numpy.std(AP1_rise_slopes)*V/ms},
-                                              'APlast_amplitude' : {'mean': numpy.mean(APlast_amps)*mV, 'std' : numpy.std(APlast_amps)*mV},
-                                              'APlast_half_duration' : {'mean': numpy.mean(APlast_half_durs)*ms, 'std' : numpy.std(APlast_half_durs)*ms},
-                                              'APlast_rise_slope' : {'mean': numpy.mean(APlast_rise_slopes)*V/ms, 'std' : numpy.std(APlast_rise_slopes)*V/ms}
+                    AP_amps = numpy.append(AP_amps, value['AP amplitude'])
+                    AP_half_durs = numpy.append(AP_half_durs, value['AP half-duration']) 
+
+            prediction['basal']['long input'][dist].update({  
+                                              'AP amplitude' : {'mean': numpy.mean(AP_amps)*mV, 'std' : numpy.std(AP_amps)*mV}, 
+                                              'AP half-duration' : {'mean': numpy.mean(AP_half_durs)*ms , 'std' : numpy.std(AP_half_durs)*ms}
                                              })
-            prediction_to_json['basal'][dist].update({  
-                                              'AP1_amplitude' : {'mean': str(numpy.mean(AP1_amps)*mV), 'std' : str(numpy.std(AP1_amps)*mV)}, 
-                                              'AP1_half_duration' : {'mean': str(numpy.mean(AP1_half_durs)*ms), 'std' : str(numpy.std(AP1_half_durs)*ms)},
-                                              'AP1_rise_slope' : {'mean': str(numpy.mean(AP1_rise_slopes)*V/ms), 'std' : str(numpy.std(AP1_rise_slopes)*V/ms)},
-                                              'APlast_amplitude' : {'mean': str(numpy.mean(APlast_amps)*mV), 'std' : str(numpy.std(APlast_amps)*mV)},
-                                              'APlast_half_duration' : {'mean': str(numpy.mean(APlast_half_durs)*ms), 'std' : str(numpy.std(APlast_half_durs)*ms)},
-                                              'APlast_rise_slope' : {'mean': str(numpy.mean(APlast_rise_slopes)*V/ms ), 'std' : str(numpy.std(APlast_rise_slopes)*V/ms)}
+            prediction_to_json['basal']['long input'][dist].update({  
+                                              'AP amplitude' : {'mean': str(numpy.mean(AP_amps)*mV), 'std' : str(numpy.std(AP_amps)*mV)}, 
+                                              'AP half-duration' : {'mean': str(numpy.mean(AP_half_durs)*ms) , 'std' : str(numpy.std(AP_half_durs)*ms)}
                                              })
-        '''
+
+        for freq in frequencies:
+
+            prediction['apical']['train of brief inputs'].update({str(freq) + ' Hz' : collections.OrderedDict()})
+            prediction_to_json['apical']['train of brief inputs'].update({str(freq) + ' Hz' : collections.OrderedDict()})
+            prediction['basal']['train of brief inputs'].update({str(freq) + ' Hz' : collections.OrderedDict()})
+            prediction_to_json['basal']['train of brief inputs'].update({str(freq) + ' Hz' : collections.OrderedDict()})
+
+            for dist in distances_apical:
+                AP_amps_fifth_firth_ratio = numpy.array([])
+                AP_half_durs_fifth_firth_ratio = numpy.array([])
+
+                prediction['apical']['train of brief inputs'][str(freq) + ' Hz'].update({dist : collections.OrderedDict()})
+                prediction_to_json['apical']['train of brief inputs'][str(freq) + ' Hz'].update({dist : collections.OrderedDict()})
+
+                for key, value in features['apical']['train of brief inputs'][str(freq) + ' Hz'].items():
+ 
+                    if value['distance'] >= dist - tolerance_apical and  value['distance'] < dist + tolerance_apical:
+
+                        AP_amps_fifth_firth_ratio = numpy.append(AP_amps_fifth_firth_ratio, value['AP amplitude-AP5/AP1'])
+                        AP_half_durs_fifth_firth_ratio = numpy.append(AP_half_durs_fifth_firth_ratio, value['AP half-duration-AP5/AP1']) 
+
+                prediction['apical']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
+                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio)*mV, 'std' : numpy.std(AP_amps_fifth_firth_ratio)*mV}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio)*ms , 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)*ms}
+                                             })
+                prediction_to_json['apical']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
+                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)*mV), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio)*mV)}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)*ms) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio)*ms)}
+                                             })
+
+            for dist in distances_basal:
+                AP_amps_fifth_firth_ratio = numpy.array([])
+                AP_half_durs_fifth_firth_ratio = numpy.array([])
+
+                prediction['basal']['train of brief inputs'][str(freq) + ' Hz'].update({dist : collections.OrderedDict()})
+                prediction_to_json['basal']['train of brief inputs'][str(freq) + ' Hz'].update({dist : collections.OrderedDict()})
+
+                for key, value in features['basal']['train of brief inputs'][str(freq) + ' Hz'].items():
+ 
+                    if value['distance'] >= dist - tolerance_basal and  value['distance'] < dist + tolerance_basal:
+
+                        AP_amps_fifth_firth_ratio = numpy.append(AP_amps_fifth_firth_ratio, value['AP amplitude-AP5/AP1'])
+                        AP_half_durs_fifth_firth_ratio = numpy.append(AP_half_durs_fifth_firth_ratio, value['AP half-duration-AP5/AP1']) 
+
+                prediction['basal']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
+                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio)*mV, 'std' : numpy.std(AP_amps_fifth_firth_ratio)*mV}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio)*ms , 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)*ms}
+                                             })
+                prediction_to_json['basal']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
+                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)*mV), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio)*mV)}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)*ms) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio)*ms)}
+                                             })
 
         file_name_features = self.path_results + 'bAP_CA3_PC_model_features.json'
         file_name_mean_features = self.path_results + 'bAP_CA3_PC_mean_model_features.json'
@@ -1041,10 +1073,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         self.plot_AP1_AP5(time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal, frequencies)
 
-        """ Till this point  it works . Except that the determination of rheobase is missing"""
 
         features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal, frequencies)
-        """Features are calculated and saved, prediction (feature means over distance ranges are not yet"""
+        """ Till this point  it works . Except that the determination of rheobase is missing"""
 
         self.plot_features(features, prediction)
 
