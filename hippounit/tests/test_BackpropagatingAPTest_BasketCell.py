@@ -871,10 +871,8 @@ class BackpropagatingAPTest_BasketCell(Test):
 
     def bind_score(self, score, model, observation, prediction):
 
-        score.related_data["figures"] = [self.path_figs + 'AP1_amp_means.pdf', self.path_figs + 'AP1_amps.pdf', self.path_figs + 'AP1_traces.pdf',
-                                        self.path_figs + 'APlast_amp_means.pdf', self.path_figs + 'APlast_amps.pdf', self.path_figs + 'APlast_traces.pdf', self.path_figs + 'Spikecounts_bAP.pdf',
-                                        self.path_figs + 'bAP_errors.pdf', self.path_figs + 'traces.pdf', self.path_results + 'bAP_errors.json',
-                                        self.path_results + 'bAP_model_features.json', self.path_results + 'bAP_model_features_means.json',
-                                        self.path_results + 'bAP_scores.json', self.path_results + 'bAP_final_score.json', self.path_results + self.test_log_filename]
-        score.related_data["results"] = [self.path_results + 'bAP_errors.json', self.path_results + 'bAP_model_features.json', self.path_results + 'bAP_model_features_means.json', self.path_results + 'bAP_scores.json', self.path_results + 'bAP_model_features.p', self.path_results + 'bAP_model_features_means.p', self.path_results + 'bAP_final_score.json']
+        score.related_data["figures"] = [self.path_figs + 'First_and_last_AP_basal.pdf', self.path_figs + 'bAP_BC_feature_errors.pdf', self.path_figs + 'First_and_last_AP_apical.pdf', self.path_figs + 'traces_basal.pdf', self.path_figs + 'traces_apical.pdf', self.path_figs + 'bAP_BC_mean_features.pdf', self.path_figs + 'bAP_BC_features.pdf', self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p', self.path_results + self.test_log_filename]
+
+        score.related_data["results"] = [self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p']
+
         return score

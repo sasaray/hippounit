@@ -125,7 +125,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         description = "Tests efficacy  and shape of back-propagating action potentials on the basal and apical dendrites of hippocampal CA3 pyramidal cells."
 
-    score_type = scores.ZScore_backpropagatingAP_BasketCell
+    score_type = scores.ZScore_backpropagatingAP_CA3_PC
 
     def format_data(self, observation):
         for loc in list(observation.keys()):
@@ -392,7 +392,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
             e_indices_AP5 = numpy.where(traces_soma_and_apical['train of brief inputs'][freq]['T'] >= soma_AP_begin_time[4]+10)
             start_index_AP5[freq] = s_indices_AP5[0][0]
             end_index_AP5[freq] = e_indices_AP5[0][0]
-        print (start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5)
+        # print (start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5)
         return [start_index_AP1, end_index_AP1, start_index_AP5, end_index_AP5]  
 
     def plot_AP1_AP5(self, time_indices_befor_and_after_somatic_AP, apical_locations_distances, basal_locations_distances, traces_soma_and_apical, traces_soma_and_basal, frequencies):
@@ -617,12 +617,12 @@ class BackpropagatingAPTest_CA3_PC(Test):
                         AP_half_durs_fifth_firth_ratio = numpy.append(AP_half_durs_fifth_firth_ratio, value['AP half-duration-AP5/AP1']) 
 
                 prediction['apical']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
-                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio)*mV, 'std' : numpy.std(AP_amps_fifth_firth_ratio)*mV}, 
-                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio)*ms , 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)*ms}
+                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio), 'std' : numpy.std(AP_amps_fifth_firth_ratio)}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio) , 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)}
                                              })
                 prediction_to_json['apical']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
-                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)*mV), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio)*mV)}, 
-                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)*ms) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio)*ms)}
+                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio))}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio))}
                                              })
 
             for dist in distances_basal:
@@ -640,12 +640,12 @@ class BackpropagatingAPTest_CA3_PC(Test):
                         AP_half_durs_fifth_firth_ratio = numpy.append(AP_half_durs_fifth_firth_ratio, value['AP half-duration-AP5/AP1']) 
 
                 prediction['basal']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
-                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio)*mV, 'std' : numpy.std(AP_amps_fifth_firth_ratio)*mV}, 
-                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio)*ms , 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)*ms}
+                                              'AP amplitude-AP5/AP1' : {'mean': numpy.mean(AP_amps_fifth_firth_ratio), 'std' : numpy.std(AP_amps_fifth_firth_ratio)}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': numpy.mean(AP_half_durs_fifth_firth_ratio), 'std' : numpy.std(AP_half_durs_fifth_firth_ratio)}
                                              })
                 prediction_to_json['basal']['train of brief inputs'][str(freq) + ' Hz'][dist].update({  
-                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)*mV), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio)*mV)}, 
-                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)*ms) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio)*ms)}
+                                              'AP amplitude-AP5/AP1' : {'mean': str(numpy.mean(AP_amps_fifth_firth_ratio)), 'std' : str(numpy.std(AP_amps_fifth_firth_ratio))}, 
+                                              'AP half-duration-AP5/AP1' : {'mean': str(numpy.mean(AP_half_durs_fifth_firth_ratio)) , 'std' : str(numpy.std(AP_half_durs_fifth_firth_ratio))}
                                              })
 
         file_name_features = self.path_results + 'bAP_CA3_PC_model_features.json'
@@ -665,149 +665,194 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
         observation = self.observation
 
-        fig, axs = plt.subplots(3,2, sharex=True)
-        plt.subplots_adjust(hspace = 0.5, wspace = 0.4)
-        axs[0, 0].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red') 
-        axs[1, 0].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
-        axs[2, 0].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
-        axs[0, 1].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red', label = 'experiment') 
-        axs[1, 1].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
-        axs[2, 1].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
-     
-        axs[0, 0].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black') 
-        axs[1, 0].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
-        axs[2, 0].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
-        axs[0, 1].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black', label= 'soma model') 
-        axs[1, 1].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
-        axs[2, 1].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
+        fig, axs = plt.subplots(1,2)
+        plt.subplots_adjust(wspace = 0.4)
+        axs[0].errorbar(0, observation['soma']['long input']['AP amplitude']['mean'], yerr = observation['soma']['long input']['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+        axs[1].errorbar(0, observation['soma']['long input']['AP half-duration']['mean'], yerr = observation['soma']['long input']['AP half-duration']['std'], marker='o', linestyle='none', color='red', label = 'experiment')
 
-        for key, value in observation['apical'].items():
-            axs[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
-            axs[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
-        for key, value in observation['basal'].items():
-            axs[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
-            axs[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
+        axs[0].plot(0, features['soma']['long input']['AP amplitude'], marker='o', linestyle='none', color='black') 
+        axs[1].plot(0, features['soma']['long input']['AP half-duration'], marker='o', linestyle='none', color='black', label = 'soma model')
 
-        i=0
-        for key, value in features['apical'].items():
-            axs[0, 0].plot(value['distance'], value['AP1_amplitude'], marker='o', linestyle='none', color='blue') 
-            axs[1, 0].plot(value['distance'], value['AP1_rise_slope'], marker='o', linestyle='none', color='blue')
-            axs[2, 0].plot(value['distance'], value['AP1_half_duration'], marker='o', linestyle='none', color='blue')
-            if i==0:
-                axs[0, 1].plot(value['distance'], value['APlast_amplitude'], marker='o', linestyle='none', color='blue', label='model') 
-            else:
-                axs[0, 1].plot(value['distance'], value['APlast_amplitude'], marker='o', linestyle='none', color='blue')
-            axs[1, 1].plot(value['distance'], value['APlast_rise_slope'], marker='o', linestyle='none', color='blue')
-            axs[2, 1].plot(value['distance'], value['APlast_half_duration'], marker='o', linestyle='none', color='blue') 
-            i+=1
+        for key, value in observation['apical']['long input'].items():
+            axs[0].errorbar(int(key), value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1].errorbar(int(key), value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='red')
 
-        for key, value in features['basal'].items():
-            axs[0, 0].plot(value['distance']*-1.0 , value['AP1_amplitude'], marker='o', linestyle='none', color='blue') 
-            axs[1, 0].plot(value['distance']*-1.0, value['AP1_rise_slope'], marker='o', linestyle='none', color='blue')
-            axs[2, 0].plot(value['distance']*-1.0, value['AP1_half_duration'], marker='o', linestyle='none', color='blue')
-            axs[0, 1].plot(value['distance']*-1.0, value['APlast_amplitude'], marker='o', linestyle='none', color='blue') 
-            axs[1, 1].plot(value['distance']*-1.0, value['APlast_rise_slope'], marker='o', linestyle='none', color='blue')
-            axs[2, 1].plot(value['distance']*-1.0, value['APlast_half_duration'], marker='o', linestyle='none', color='blue') 
-        axs[0, 0].set_ylabel('AP amplitude\n (mV)') 
-        axs[1, 0].set_ylabel('AP rise slope\n (V/ms)') 
-        axs[2, 0].set_ylabel('AP half-duration\n (ms)') 
-        axs[2, 0].set_xlabel('Distance (um)') 
-        axs[2, 1].set_xlabel('Distance (um)') 
-        axs[0, 0].set_title('First AP') 
-        axs[0, 1].set_title('Last AP')
-        fig.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
-        lgd=axs[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'bAP_BC_features'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
-
-
-       # plot prediction
-
-        fig2, axs2 = plt.subplots(3,2, sharex=True)
-        plt.subplots_adjust(hspace = 0.5, wspace = 0.4)
-        axs2[0, 0].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red') 
-        axs2[1, 0].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
-        axs2[2, 0].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
-        axs2[0, 1].errorbar(0, observation['soma']['AP_amplitude']['mean'], yerr = observation['soma']['AP_amplitude']['std'], marker='o', linestyle='none', color='red', label = 'experiment') 
-        axs2[1, 1].errorbar(0, observation['soma']['AP_rise_slope']['mean'], yerr = observation['soma']['AP_rise_slope']['std'], marker='o', linestyle='none', color='red')
-        axs[2, 1].errorbar(0, observation['soma']['AP_half_duration']['mean'], yerr = observation['soma']['AP_half_duration']['std'], marker='o', linestyle='none', color='red')
-     
-        axs2[0, 0].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black') 
-        axs2[1, 0].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
-        axs2[2, 0].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
-        axs2[0, 1].plot(0, features['soma']['AP_amplitude'], marker='o', linestyle='none', color='black', label= 'soma model') 
-        axs2[1, 1].plot(0, features['soma']['AP_rise_slope'], marker='o', linestyle='none', color='black')
-        axs2[2, 1].plot(0, features['soma']['AP_half_duration'], marker='o', linestyle='none', color='black')
-
-        for key, value in observation['apical'].items():
-            axs2[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs2[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs2[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
-            axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs2[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs2[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
-        for key, value in observation['basal'].items():
-            axs2[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs2[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs2[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='red')
-            axs2[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='red') 
-            axs2[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='red')
-            axs2[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='red')  
-
-        i=0
-        for key, value in prediction['apical'].items():
-            axs2[0, 0].errorbar(int(key), value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='blue') 
-            axs2[1, 0].errorbar(int(key), value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='blue')
-            axs2[2, 0].errorbar(int(key), value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='blue')
-            if i==0:
-                axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue', label = 'model')
-            else:
-                axs2[0, 1].errorbar(int(key), value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue', label = 'model') 
-            axs2[1, 1].errorbar(int(key), value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='blue')
-            axs2[2, 1].errorbar(int(key), value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='blue') 
-            i+=1
+        for key, value in observation['basal']['long input'].items():
+            axs[0].errorbar(int(key)*-1.0 , value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs[1].errorbar(int(key)*-1.0, value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='red')
  
-        for key, value in prediction['basal'].items():
-            axs2[0, 0].errorbar(int(key)*-1.0 , value['AP1_amplitude']['mean'], yerr = value['AP1_amplitude']['std'], marker='o', linestyle='none', color='blue') 
-            axs2[1, 0].errorbar(int(key)*-1.0, value['AP1_rise_slope']['mean'], yerr = value['AP1_rise_slope']['std'], marker='o', linestyle='none', color='blue')
-            axs2[2, 0].errorbar(int(key)*-1.0, value['AP1_half_duration']['mean'], yerr = value['AP1_half_duration']['std'], marker='o', linestyle='none', color='blue')
-            axs2[0, 1].errorbar(int(key)*-1.0, value['APlast_amplitude']['mean'], yerr = value['APlast_amplitude']['std'], marker='o', linestyle='none', color='blue') 
-            axs2[1, 1].errorbar(int(key)*-1.0, value['APlast_rise_slope']['mean'], yerr = value['APlast_rise_slope']['std'], marker='o', linestyle='none', color='blue')
-            axs2[2, 1].errorbar(int(key)*-1.0, value['APlast_half_duration']['mean'], yerr = value['APlast_half_duration']['std'], marker='o', linestyle='none', color='blue')   
-        axs2[0, 0].set_ylabel('AP amplitude\n (mV)') 
-        axs2[1, 0].set_ylabel('AP rise slope\n (V/ms)') 
-        axs2[2, 0].set_ylabel('AP half-duration\n (ms)') 
-        axs2[2, 0].set_xlabel('Distance (um)') 
-        axs2[2, 1].set_xlabel('Distance (um)') 
-        axs2[0, 0].set_title('First AP') 
-        axs2[0, 1].set_title('Last AP')
-        fig2.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
-        lgd=axs[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+
+        i=0
+        for key, value in features['apical']['long input'].items():
+            axs[0].plot(value['distance'], value['AP amplitude'], marker='o', linestyle='none', color='blue') 
+            if i==0:
+                axs[1].plot(value['distance'], value['AP half-duration'], marker='o', linestyle='none', color='blue', label='model')
+            else:
+                axs[1].plot(value['distance'], value['AP half-duration'], marker='o', linestyle='none', color='blue')
+            i+=1
+
+        for key, value in features['basal']['long input'].items():
+            axs[0].plot(value['distance']*-1.0 , value['AP amplitude'], marker='o', linestyle='none', color='blue') 
+            axs[1].plot(value['distance']*-1.0, value['AP half-duration'], marker='o', linestyle='none', color='blue')
+
+        axs[0].set_ylabel('AP amplitude (mV)') 
+        axs[1].set_ylabel('AP half-duration (ms)') 
+        axs[0].set_xlabel('Distance (um)') 
+        axs[1].set_xlabel('Distance (um)') 
+        fig.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         if self.save_all:
-            plt.savefig(self.path_figs + 'bAP_BC_mean_features'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight') 
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_features_long_input'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+       # plot prediction long input
+
+        fig2, axs2 = plt.subplots(1,2)
+        plt.subplots_adjust(wspace = 0.4)
+        axs2[0].errorbar(0, observation['soma']['long input']['AP amplitude']['mean'], yerr = observation['soma']['long input']['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+        axs2[1].errorbar(0, observation['soma']['long input']['AP half-duration']['mean'], yerr = observation['soma']['long input']['AP half-duration']['std'], marker='o', linestyle='none', color='red', label = 'experiment')
+
+        axs2[0].plot(0, prediction['soma']['long input']['AP amplitude'], marker='o', linestyle='none', color='black') 
+        axs2[1].plot(0, prediction['soma']['long input']['AP half-duration'], marker='o', linestyle='none', color='black', label = 'soma model')
+
+        for key, value in observation['apical']['long input'].items():
+            axs2[0].errorbar(int(key), value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1].errorbar(int(key), value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='red')
+
+        for key, value in observation['basal']['long input'].items():
+            axs2[0].errorbar(int(key)*-1.0, value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='red') 
+            axs2[1].errorbar(int(key)*-1.0, value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='red')
+ 
+        i=0
+        for key, value in prediction['apical']['long input'].items():
+            axs2[0].errorbar(int(key), value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='blue') 
+            if i==0:
+                axs2[1].errorbar(int(key), value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='blue', label='model')
+            else:
+                axs2[1].errorbar(int(key), value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='blue')
+            i+=1
+
+        for key, value in prediction['basal']['long input'].items():
+            axs2[0].errorbar(int(key)*-1.0, value['AP amplitude']['mean'], yerr = value['AP amplitude']['std'], marker='o', linestyle='none', color='blue') 
+            axs2[1].errorbar(int(key)*-1.0, value['AP half-duration']['mean'], yerr = value['AP half-duration']['std'], marker='o', linestyle='none', color='blue')
+
+        axs2[0].set_ylabel('AP amplitude (mV)') 
+        axs2[1].set_ylabel('AP half-duration (ms)') 
+        axs2[0].set_xlabel('Distance (um)') 
+        axs2[1].set_xlabel('Distance (um)') 
+        fig2.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_mean_features_long_input'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+       # plot features short pulses 
+
+        fig3, axs3 = plt.subplots(len(list(observation['soma']['train of brief inputs'].keys())),2, sharex = True, sharey = True)
+        # plt.subplots_adjust(wspace = 0.4, hspace = 0.5)
+
+        for i, freq in enumerate(sorted(list(observation['soma']['train of brief inputs'].keys()))):
+            axs3[i, 0].errorbar(0, observation['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1']['mean'], yerr = observation['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+            axs3[i, 1].errorbar(0, observation['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1']['mean'], yerr = observation['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red', label = 'experiment')
+
+            axs3[i, 0].plot(0, features['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1'], marker='o', linestyle='none', color='black') 
+            axs3[i, 1].plot(0, features['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1'], marker='o', linestyle='none', color='black', label = 'soma model')
+
+            for key, value in observation['apical']['train of brief inputs'][freq].items():
+                axs3[i, 0].errorbar(int(key), value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+                axs3[i, 1].errorbar(int(key), value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red')
+
+            for key, value in observation['basal']['train of brief inputs'][freq].items():
+                axs3[i, 0].errorbar(int(key)*-1.0 , value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+                axs3[i, 1].errorbar(int(key)*-1.0, value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red')
+ 
+
+            j=0
+            for key, value in features['apical']['train of brief inputs'][freq].items():
+                axs3[i, 0].plot(value['distance'], value['AP amplitude-AP5/AP1'], marker='o', linestyle='none', color='blue') 
+                if j==0:
+                    axs3[i, 1].plot(value['distance'], value['AP half-duration-AP5/AP1'], marker='o', linestyle='none', color='blue', label='model')
+                else:
+                    axs3[i, 1].plot(value['distance'], value['AP half-duration-AP5/AP1'], marker='o', linestyle='none', color='blue')
+                j+=1
+
+            for key, value in features['basal']['train of brief inputs'][freq].items():
+                axs3[i, 0].plot(value['distance']*-1.0 , value['AP amplitude-AP5/AP1'], marker='o', linestyle='none', color='blue') 
+                axs3[i, 1].plot(value['distance']*-1.0, value['AP half-duration-AP5/AP1'], marker='o', linestyle='none', color='blue')
+
+            axs3[i,0].set_ylabel('Fifth AP/\n first AP') 
+            axs3[i,0].text(0.95,0.9, freq, horizontalalignment='right', verticalalignment='top', transform=axs3[i,0].transAxes)
+            axs3[i,1].text(0.95,0.9, freq, horizontalalignment='right', verticalalignment='top', transform=axs3[i,1].transAxes)
+        axs3[-1, 0].set_xlabel('Distance (um)') 
+        axs3[-1, 1].set_xlabel('Distance (um)') 
+        axs3[0, 0].set_title('AP amplitude')
+        axs3[0, 1].set_title('AP half-duration')
+        fig3.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs3[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_features_short_pulses'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+       # plot observation short pulses 
+
+        fig4, axs4 = plt.subplots(len(list(observation['soma']['train of brief inputs'].keys())),2, sharex = True, sharey = True)
+        # plt.subplots_adjust(wspace = 0.4, hspace = 0.5)
+
+        for i, freq in enumerate(sorted(list(observation['soma']['train of brief inputs'].keys()))):
+            axs4[i, 0].errorbar(0, observation['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1']['mean'], yerr = observation['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+            axs4[i, 1].errorbar(0, observation['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1']['mean'], yerr = observation['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red', label = 'experiment')
+
+            axs4[i, 0].plot(0, prediction['soma']['train of brief inputs'][freq]['AP amplitude-AP5/AP1'], marker='o', linestyle='none', color='black') 
+            axs4[i, 1].plot(0, prediction['soma']['train of brief inputs'][freq]['AP half-duration-AP5/AP1'], marker='o', linestyle='none', color='black', label = 'soma model')
+
+            for key, value in observation['apical']['train of brief inputs'][freq].items():
+                axs4[i, 0].errorbar(int(key), value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+                axs4[i, 1].errorbar(int(key), value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red')
+
+            for key, value in observation['basal']['train of brief inputs'][freq].items():
+                axs4[i, 0].errorbar(int(key)*-1.0 , value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='red') 
+                axs4[i, 1].errorbar(int(key)*-1.0, value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='red')
+ 
+
+            j=0
+            for key, value in prediction['apical']['train of brief inputs'][freq].items():
+                axs4[i, 0].errorbar(int(key), value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='blue') 
+                if j==0:
+                    axs4[i, 1].errorbar(int(key), value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='blue', label='model')
+                else:
+                    axs4[i, 1].errorbar(int(key), value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='blue')
+                j+=1
+
+            for key, value in prediction['basal']['train of brief inputs'][freq].items():
+                axs4[i, 0].errorbar(int(key)*-1.0 , value['AP amplitude-AP5/AP1']['mean'], yerr = value['AP amplitude-AP5/AP1']['std'], marker='o', linestyle='none', color='blue') 
+                axs4[i, 1].errorbar(int(key)*-1.0, value['AP half-duration-AP5/AP1']['mean'], yerr = value['AP half-duration-AP5/AP1']['std'], marker='o', linestyle='none', color='blue')
+
+            axs4[i,0].set_ylabel('Fifth AP/\n first AP') 
+            axs4[i,0].text(0.95,0.9, freq, horizontalalignment='right', verticalalignment='top', transform=axs4[i,0].transAxes)
+            axs4[i,1].text(0.95,0.9, freq, horizontalalignment='right', verticalalignment='top', transform=axs4[i,1].transAxes)
+        axs4[-1, 0].set_xlabel('Distance (um)') 
+        axs4[-1, 1].set_xlabel('Distance (um)') 
+        axs4[0, 0].set_title('AP amplitude')
+        axs4[0, 1].set_title('AP half-duration')
+        fig4.suptitle('positive distance: apical dendrites, negative distance: basal dendrites')
+        lgd=axs4[0,1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_mean_features_short_pulses'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
        
     def plot_errors(self, errors):
 
-        n_dist_apic = len(list(errors['apical'].keys()))
-        n_dist_bas = len(list(errors['basal'].keys()))
+       # long input 
+        n_dist_apic = len(list(errors['apical']['long input'].keys()))
+        n_dist_bas = len(list(errors['basal']['long input'].keys()))
         n_subplots = 1+n_dist_apic+n_dist_bas
         fig, axs = plt.subplots(int(numpy.ceil(n_subplots/2)), 2)
         axs = axs.flatten()
         plt.subplots_adjust(hspace = 0.7, wspace = 1.1)
 
         i = 0   
-        for key, value in errors['apical'].items():
+        for key in sorted(errors['apical']['long input'].keys()):
            err =[]
            ticks =[]
-           for k, v in value.items():
+           for k, v in errors['apical']['long input'][key].items():
                err.append(v)
                ticks.append(k) 
            y = list(range(len(ticks)))
@@ -815,12 +860,13 @@ class BackpropagatingAPTest_CA3_PC(Test):
            axs[i].set_yticks(y)
            axs[i].set_yticklabels(ticks)
            axs[i].set_title('Apical dendrites - ' + str(key) + ' um')
+           axs[i].margins(y=0.2)
            i+=1
 
-        for key, value in errors['basal'].items():
+        for key in sorted(errors['basal']['long input'].keys()):
            err =[]
            ticks =[]
-           for k, v in value.items():
+           for k, v in errors['basal']['long input'][key].items():
                err.append(v)
                ticks.append(k) 
            y = list(range(len(ticks)))
@@ -828,22 +874,85 @@ class BackpropagatingAPTest_CA3_PC(Test):
            axs[i].set_yticks(y) 
            axs[i].set_yticklabels(ticks)
            axs[i].set_title('Basal dendrites - ' + str(key) + ' um')
+           axs[i].margins(y=0.2)
            i+=1
 
         err =[]
         ticks =[]
 
-        for k,v in errors['soma'].items():
-            err.append(v)
+        for k in sorted(errors['soma']['long input'].keys()):
+            err.append(errors['soma']['long input'][k])
             ticks.append(k)
         y = list(range(len(ticks))) 
         axs[i].plot(err, y, 'o')
         axs[i].set_yticks(y)
         axs[i].set_yticklabels(ticks)
         axs[i].set_title('Soma')
-        fig.suptitle('Feature errors')
+        axs[i].margins(y=0.2)
+        fig.suptitle('Feature errors - Long rheobase input')
+
         if self.save_all:
-            plt.savefig(self.path_figs + 'bAP_BC_feature_errors'+ '.pdf', dpi=600, bbox_inches='tight') 
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_feature_errors_long_input'+ '.pdf', dpi=600, bbox_inches='tight') 
+
+
+        #  short pulses input
+        fig2, axs2 = plt.subplots(int(numpy.ceil(n_subplots/2)), 2)
+        axs2 = axs2.flatten()
+        plt.subplots_adjust(hspace = 0.7, wspace = 1.5)
+        # markers = ['s', '.', '*'] 
+        try:
+	    colormap = plt.cm.spectral    
+        except:
+	    colormap = plt.cm.nipy_spectral
+        colors = colormap(numpy.linspace(0, 0.9, len(list(errors['soma']['train of brief inputs'].keys()))+1))
+
+
+        for j, freq in enumerate(sorted(list(errors['soma']['train of brief inputs'].keys()))):
+            i = 0   
+            for key in sorted(errors['apical']['train of brief inputs'][freq].keys()):
+               err =[]
+               ticks =[]
+               for k, v in errors['apical']['train of brief inputs'][freq][key].items():
+                   err.append(v)
+                   ticks.append(k) 
+               y = list(range(len(ticks)))
+               axs2[i].plot(err, y, 'o', color = colors[j], label = freq) 
+               axs2[i].set_yticks(y)
+               axs2[i].set_yticklabels(ticks)
+               axs2[i].set_title('Apical dendrites - ' + str(key) + ' um')
+               axs2[i].margins(y=0.3)
+               i+=1
+
+            for key in sorted(errors['basal']['train of brief inputs'][freq].keys()):
+               err =[]
+               ticks =[]
+               for k, v in errors['basal']['train of brief inputs'][freq][key].items():
+                   err.append(v)
+                   ticks.append(k) 
+               y = list(range(len(ticks)))
+               axs2[i].plot(err, y, 'o', color = colors[j]) 
+               axs2[i].set_yticks(y) 
+               axs2[i].set_yticklabels(ticks)
+               axs2[i].set_title('Basal dendrites - ' + str(key) + ' um')
+               axs2[i].margins(y=0.3)
+               i+=1
+
+            err =[]
+            ticks =[]
+
+            for k in sorted(errors['soma']['train of brief inputs'][freq].keys()):
+                err.append(errors['soma']['train of brief inputs'][freq][k])
+                ticks.append(k)
+            y = list(range(len(ticks))) 
+            axs2[i].plot(err, y, 'o', color = colors[j])
+            axs2[i].set_yticks(y)
+            axs2[i].set_yticklabels(ticks)
+            axs2[i].set_title('Soma')
+            axs2[i].margins(y=0.3)
+        fig2.suptitle('Feature errors - Brief pulses input')
+        lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+        if self.save_all:
+            plt.savefig(self.path_figs + 'bAP_CA3_PC_feature_errors_brief_pulses'+ '.pdf', dpi=600, bbox_inches='tight') 
 
     def plot_traces(self, model, traces_soma_and_apical, traces_soma_and_basal, apical_locations_distances, basal_locations_distances):
         # TODO: somehow sort the traces by distance 
@@ -1075,9 +1184,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
 
         features, prediction = self.extract_prediction_features(efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal, frequencies)
-        """ Till this point  it works . Except that the determination of rheobase is missing"""
 
         self.plot_features(features, prediction)
+        """ Till this point  it works . Except that the determination of rheobase is missing"""
 
         efel.reset()
 
@@ -1087,7 +1196,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         """Implementation of sciunit.Test.score_prediction."""
 
 
-        score_avg, errors= scores.ZScore_backpropagatingAP_BasketCell.compute(observation,prediction)
+        score_avg, errors= scores.ZScore_backpropagatingAP_CA3_PC.compute(observation,prediction)
 
         file_name=self.path_results+'bAP_CA3_PC_errors.json'
 
@@ -1109,7 +1218,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         json.dump(score_json, open(file_name_score, "w"), indent=4)
 
 
-        score=scores.ZScore_backpropagatingAP_BasketCell(score_avg)
+        score=scores.ZScore_backpropagatingAP_CA3_PC(score_avg)
 
         self.logFile.write(str(score)+'\n')
         self.logFile.write("---------------------------------------------------------------------------------------------------\n")
@@ -1123,10 +1232,8 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
     def bind_score(self, score, model, observation, prediction):
 
-        score.related_data["figures"] = [self.path_figs + 'AP1_amp_means.pdf', self.path_figs + 'AP1_amps.pdf', self.path_figs + 'AP1_traces.pdf',
-                                        self.path_figs + 'APlast_amp_means.pdf', self.path_figs + 'APlast_amps.pdf', self.path_figs + 'APlast_traces.pdf', self.path_figs + 'Spikecounts_bAP.pdf',
-                                        self.path_figs + 'bAP_errors.pdf', self.path_figs + 'traces.pdf', self.path_results + 'bAP_errors.json',
-                                        self.path_results + 'bAP_model_features.json', self.path_results + 'bAP_model_features_means.json',
-                                        self.path_results + 'bAP_scores.json', self.path_results + 'bAP_final_score.json', self.path_results + self.test_log_filename]
-        score.related_data["results"] = [self.path_results + 'bAP_errors.json', self.path_results + 'bAP_model_features.json', self.path_results + 'bAP_model_features_means.json', self.path_results + 'bAP_scores.json', self.path_results + 'bAP_model_features.p', self.path_results + 'bAP_model_features_means.p', self.path_results + 'bAP_final_score.json']
+        score.related_data["figures"] = [self.path_figs + 'bAP_CA3_PC_mean_features_long_input.pdf', self.path_figs + 'traces_pulses_basal.pdf',  self.path_figs + 'First_and_fifth_APs_apical.pdf', self.path_figs + 'First_and_fifth_APs_basal.pdf', self.path_figs + 'bAP_CA3_PC_mean_features_short_pulses.pdf', self.path_figs + 'traces_long_rheobase_input_basal.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_long_input.pdf', self.path_figs + 'traces_pulses_apical.pdf', self.path_results + 'traces_long_rheobase_input_apical.pdf', self.path_figs + 'bAP_CA3_PC_features_short_pulses.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_brief_pulses.pdf', self.path_figs + 'bAP_CA3_PC_features_long_input.pdf',self.path_results + 'bAP_CA3_PC_mean_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.json', self.path_results + 'bAP_CA3_PC_final_score.json', self.path_results + 'bAP_CA3_PC_mean_model_features.json', self.path_results + 'bAP_CA3_PC_errors.json', self.path_results + self.test_log_filename]
+
+
+        score.related_data["results"] = [self.path_results + 'bAP_CA3_PC_mean_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.json', self.path_results + 'bAP_CA3_PC_final_score.json', self.path_results + 'bAP_CA3_PC_mean_model_features.json', self.path_results + 'bAP_CA3_PC_errors.json']
         return score
