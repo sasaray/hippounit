@@ -529,13 +529,13 @@ class ModelLoader(sciunit.Model,
             SecList_name = self.BasalSecList_name
 
             if SecList_name is None:    # find_section_list can not be used for basal dendrites, as it classifies apical dendrites into subtypes
-                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.BasalSecList_name=\"basal\" or set model.find_section_lists to True)")
+                raise NotImplementedError("Please give the name of the section list containing the basal dendritic sections. (eg. model.BasalSecList_name=\"basal\" or set model.find_section_lists to True)")
 
         elif dendritic_type == 'apical':
             SecList_name = self.ApicalSecList_name
 
             if SecList_name is None: # find_section_list can not be used for basal dendrites, as it classifies apical dendrites into subtypes
-                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.ApicalSecList_name=\"apical\" or set model.find_section_lists to True)")
+                raise NotImplementedError("Please give the name of the section list containing the apical dendritic sections. (eg. model.ApicalSecList_name=\"apical\" or set model.find_section_lists to True)")
 
         elif dendritic_type == 'trunk':
             SecList_name = self.TrunkSecList_name
@@ -547,13 +547,13 @@ class ModelLoader(sciunit.Model,
             SecList_name = self.TuftSecList_name
 
             if SecList_name is None and not self.find_section_lists:
-                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.TuftkSecList_name=\"tuft\" or set model.find_section_lists to True)")
+                raise NotImplementedError("Please give the name of the section list containing the tuft sections. (eg. model.TuftkSecList_name=\"tuft\" or set model.find_section_lists to True)")
 
         elif dendritic_type == 'oblique':
             SecList_name = self.ObliqueSecList_name
 
             if SecList_name is None and not self.find_section_lists:
-                raise NotImplementedError("Please give the name of the section list containing the trunk sections. (eg. model.ObliqueSecList_name=\"oblique\" or set model.find_section_lists to True)")
+                raise NotImplementedError("Please give the name of the section list containing the oblique dendritic sections. (eg. model.ObliqueSecList_name=\"oblique\" or set model.find_section_lists to True)")
 
 
         locations=[]
