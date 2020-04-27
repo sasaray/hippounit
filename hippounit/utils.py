@@ -71,6 +71,7 @@ class ModelLoader(sciunit.Model,
         self.ApicalSecList_name = None
         self.BasalSecList_name = None
         self.TuftSecList_name = None
+        self.AxonSecList_name = None
         self.dend_loc = []  #self.dend_loc = [['dendrite[80]',0.27],['dendrite[80]',0.83],['dendrite[54]',0.16],['dendrite[54]',0.95],['dendrite[52]',0.38],['dendrite[52]',0.83],['dendrite[53]',0.17],['dendrite[53]',0.7],['dendrite[28]',0.35],['dendrite[28]',0.78]]
         self.dend_locations = collections.OrderedDict()
         self.NMDA_name = None
@@ -554,6 +555,12 @@ class ModelLoader(sciunit.Model,
 
             if SecList_name is None and not self.find_section_lists:
                 raise NotImplementedError("Please give the name of the section list containing the oblique dendritic sections. (eg. model.ObliqueSecList_name=\"oblique\" or set model.find_section_lists to True)")
+
+        elif dendritic_type == 'axon':
+            SecList_name = self.AxonSecList_name
+
+            if SecList_name is None:
+                raise NotImplementedError("Please give the name of the section list containing the axon sections. (eg. model.AxonSecList_name=\"axon\" or set model.find_section_lists to True)")
 
 
         locations=[]
