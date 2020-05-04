@@ -760,15 +760,23 @@ class BackpropagatingAPTest_BasketCell(Test):
         tolerance_basal = self.config['basal_recording']['tolerance']
         dist_range_basal = [min(distances_basal) - tolerance_basal, max(distances_basal) + tolerance_basal]
 
-        apical_locations, apical_locations_distances = model.get_random_locations_multiproc('apical', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical) # number of random locations , seed
-        # apical_locations_distances = sorted(apical_locations_distances, key=apical_locations_distances.get)
-        #print dend_locations, actual_distances
-        print('Apical dendritic locations to be tested (with their actual distances):', apical_locations_distances)
+        if self.num_of_apical_dend_locations != 0:
+            apical_locations, apical_locations_distances = model.get_random_locations_multiproc('apical', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical) # number of random locations , seed
+            # apical_locations_distances = sorted(apical_locations_distances, key=apical_locations_distances.get)
+            #print dend_locations, actual_distances
+            print('Apical dendritic locations to be tested (with their actual distances):', apical_locations_distances)
+        else:
+            apical_locations = []
+            apical_locations_distances = []
 
-        basal_locations, basal_locations_distances = model.get_random_locations_multiproc('basal', self.num_of_basal_dend_locations, self.random_seed, dist_range_basal) # number of random locations , seed
-        # basal_locations_distances = sorted(basal_locations_distances, key=basal_locations_distances.get)
-        #print dend_locations, actual_distances
-        print('Basal dendritic locations to be tested (with their actual distances):', basal_locations_distances)
+        if self.num_of_basal_dend_locations != 0:
+            basal_locations, basal_locations_distances = model.get_random_locations_multiproc('basal', self.num_of_basal_dend_locations, self.random_seed, dist_range_basal) # number of random locations , seed
+            # basal_locations_distances = sorted(basal_locations_distances, key=basal_locations_distances.get)
+            #print dend_locations, actual_distances
+            print('Basal dendritic locations to be tested (with their actual distances):', basal_locations_distances)
+        else:
+            basal_locations = []
+            basal_locations_distances = []
 
         dend_locations = apical_locations + basal_locations   # so the simulation is run only once, and record from alll the locations at the same time 
 

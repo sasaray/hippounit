@@ -53,6 +53,7 @@ class ModelLoader(sciunit.Model,
         self.max_dist_from_soma = 150
         self.v_init = -70
         self.celsius = 34
+        self.dt = 0.025
 
         self.name = name
         self.threshold = -20
@@ -216,9 +217,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/self.dt
         h.v_init = self.v_init#-65
 
         h.celsius = self.celsius
@@ -295,9 +296,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/self.dt
         h.v_init = self.v_init#-65
 
         h.celsius = self.celsius
@@ -398,9 +399,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/self.dt
         h.v_init = self.v_init#-65
 
         h.celsius = self.celsius
@@ -524,8 +525,8 @@ class ModelLoader(sciunit.Model,
     def get_random_locations(self, dendritic_type, num, seed, dist_range):
 
         # modified to make it more general and useable for any of the main dendritic types
-       # TODO: modify original tests to adapt to this, and check if everything works fine (AND PathwayInteractionTest)
-
+        # TODO: modify original tests to adapt to this, and check if everything works fine (AND PathwayInteractionTest)
+        # print(dist_range, self.soma)
         if dendritic_type == 'basal':
             SecList_name = self.BasalSecList_name
 
@@ -611,7 +612,7 @@ class ModelLoader(sciunit.Model,
             num_of_secs += sec.nseg
             kumm_length += sec.L
             kumm_length_list.append(kumm_length)
-        #print 'kumm' ,kumm_length_list
+        # print('kumm' ,kumm_length_list)
         #print num_of_secs
 
         if num > num_of_secs:
@@ -655,7 +656,9 @@ class ModelLoader(sciunit.Model,
                             #print 'segment', segment
                             h(self.soma + ' ' +'distance()')
                             h('access ' + self.dendrites[i].name())
+                            # print('all', [self.dendrites[i].name(), segment], h.distance(segment)) 
                             if [self.dendrites[i].name(), segment] not in locations and h.distance(segment) >= dist_range[0] and h.distance(segment) < dist_range[1]:
+                                # print('accepted', [self.dendrites[i].name(), segment], h.distance(segment)) 
                                 locations.append([self.dendrites[i].name(), segment])
                                 locations_distances[self.dendrites[i].name(), segment] = h.distance(segment)
                 _num_ = num - len(locations)
@@ -864,9 +867,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/ dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/ self.dt
         h.v_init = self.v_init #-80
 
         h.celsius = self.celsius
@@ -962,9 +965,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/self.dt
         h.v_init = self.v_init #-80
 
         h.celsius = self.celsius
@@ -1041,9 +1044,9 @@ class ModelLoader(sciunit.Model,
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1/dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1/self.dt
         h.v_init = self.v_init #-80
 
         h.celsius = self.celsius
@@ -1495,9 +1498,9 @@ class ModelLoader_Spine_syn(ModelLoader):
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1 / dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1 / self.dt
         h.v_init = self.v_init #-80
 
         h.celsius = self.celsius
@@ -1728,9 +1731,9 @@ class ModelLoader_Spine_syn(ModelLoader):
         rec_g_NMDA.record(self.nmda._ref_g)
         '''
         h.stdinit()
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1 / dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1 / self.dt
         h.v_init = self.v_init
         h.celsius = self.celsius
         h.init()
@@ -1846,9 +1849,9 @@ class ModelLoader_Spine_syn_CA1_burst(ModelLoader_Spine_syn):
 
         h.stdinit()
 
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1 / dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1 / self.dt
         h.v_init = self.v_init #-80
 
         h.celsius = self.celsius
@@ -1913,9 +1916,9 @@ class ModelLoader_Spine_syn_CA1_burst(ModelLoader_Spine_syn):
         rec_v_dend.record(dendrite(xloc)._ref_v)
 
         h.stdinit()
-        dt = 0.025
-        h.dt = dt
-        h.steps_per_ms = 1 / dt
+        # dt = 0.025
+        h.dt = self.dt
+        h.steps_per_ms = 1 / self.dt
         h.v_init = self.v_init
         h.celsius = self.celsius
         h.init()

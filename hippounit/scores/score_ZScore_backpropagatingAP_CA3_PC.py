@@ -75,8 +75,6 @@ class ZScore_backpropagatingAP_CA3_PC(Score):
                     error = e
                 errors['basal']['long input'][int(key)].update({k : error})
                 feature_errors=numpy.append(feature_errors, error)
-        score_avg=numpy.nanmean(feature_errors)
-
 
         for freq in list(sorted(observation['soma']['train of brief inputs'].keys())):
             errors['soma']['train of brief inputs'][freq] = collections.OrderedDict()
@@ -123,6 +121,8 @@ class ZScore_backpropagatingAP_CA3_PC(Score):
                         error = e
                     errors['basal']['train of brief inputs'][freq][int(key)].update({k : error})
                     feature_errors=numpy.append(feature_errors, error)
+
+        score_avg=numpy.nanmean(feature_errors)
 
         return score_avg, errors
 
