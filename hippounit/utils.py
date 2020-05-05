@@ -499,7 +499,7 @@ class ModelLoader(sciunit.Model,
 
         for sec in self.trunk:
             #for seg in sec:
-            h(self.soma + ' ' +'distance()') #set soma as the origin
+            h(self.soma + ' ' +'distance(0,1)') #set soma end (point 1) as the origin, as we select apical dendrites here
             #print sec.name()
             if self.find_section_lists:
                 h('access ' + sec.name())
@@ -617,7 +617,10 @@ class ModelLoader(sciunit.Model,
 
         if num > num_of_secs:
             for sec in self.dendrites:
-                h(self.soma + ' ' +'distance()')
+                if dendritic_type == 'basal':
+                    h(self.soma + ' ' +'distance(0,0)')  # For basal dendrites the reference point is the beginning of the soma (point 0)
+                else:
+                    h(self.soma + ' ' +'distance(0,1)')  # For apical dendrites the reference point is the end of the soma (point 1)
                 h('access ' + sec.name())
                 for seg in sec:
                     if h.distance(seg.x) > dist_range[0] and h.distance(seg.x) < dist_range[1]:     # if they are out of the distance range they wont be used
@@ -654,7 +657,11 @@ class ModelLoader(sciunit.Model,
                             min_d_seg = numpy.argmin(d_seg)
                             segment = segs[min_d_seg]
                             #print 'segment', segment
-                            h(self.soma + ' ' +'distance()')
+                            # h(self.soma + ' ' +'distance()')
+                            if dendritic_type == 'basal':
+                                h(self.soma + ' ' +'distance(0,0)')  # For basal dendrites the reference point is the beginning of the soma (point 0)
+                            else:
+                                h(self.soma + ' ' +'distance(0,1)')  # For apical dendrites the reference point is the end of the soma (point 1)
                             h('access ' + self.dendrites[i].name())
                             # print('all', [self.dendrites[i].name(), segment], h.distance(segment)) 
                             if [self.dendrites[i].name(), segment] not in locations and h.distance(segment) >= dist_range[0] and h.distance(segment) < dist_range[1]:
@@ -718,7 +725,7 @@ class ModelLoader(sciunit.Model,
 
         while good_obliques_added == 0 and self.max_dist_from_soma <= 190:
             for sec in self.oblique_dendrites:
-                h(self.soma + ' ' +'distance()') #set soma as the origin
+                h(self.soma + ' ' +'distance(0,1)') # For apical dendrites the reference point is the end of the soma (point 1)
                 if self.find_section_lists:
                     h('access ' + sec.name())
                 parent = h.SectionRef(sec).parent

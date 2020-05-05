@@ -363,7 +363,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
             traces_results = efel.getFeatureValues(traces_for_efel, ['AP_amplitude', 'AP_duration_half_width'])
             traces_results_basal['long input'][key] = traces_results 
 
-
+        # print(traces_results_soma, traces_results_apical, traces_results_basal)
         return traces_results_soma, traces_results_apical, traces_results_basal
 
 
@@ -1066,7 +1066,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
             for key, value in traces_soma_and_apical['train of brief inputs'][freq]['v_rec'].items():
                  axs1[i].plot(traces_soma_and_apical['train of brief inputs'][freq]['T'],traces_soma_and_apical['train of brief inputs'][freq]['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
             axs1[i].set_ylabel('membrane\n potential (mV)')
-            # axs1[i].set_xlim(650, 700)
+            # axs1[i].set_xlim(600, 700)
             axs1[i].text(0.95,0.9, str(freq) + ' Hz', horizontalalignment='right', verticalalignment='top', transform=axs1[i].transAxes)
         axs1[-1].set_xlabel('time (ms)')
         fig1.suptitle('Brief current pulses to soma\n recorded at apical dendrites')
@@ -1097,6 +1097,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
             plt.plot(traces_soma_and_apical['long input']['T'],traces_soma_and_apical['long input']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
         plt.xlabel('time (ms)')
         plt.ylabel('membrane potential (mV)')
+        # plt.xlim(540,560)
         plt.title('Long rheobase current to soma\n recorded at apical dendrites')
         lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         if self.save_all:
@@ -1108,6 +1109,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
             plt.plot(traces_soma_and_basal['long input']['T'],traces_soma_and_basal['long input']['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
         plt.xlabel('time (ms)')
         plt.ylabel('membrane potential (mV)')
+        # plt.xlim(540,560)
         plt.title('Long rheobase current to soma\n recorded at basal dendrites')
         lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
         if self.save_all:
@@ -1252,6 +1254,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         """Implementation of sciunit.Test.generate_prediction."""
 
         efel.reset()
+        efel.setThreshold(0.0)
 
         if self.base_directory:
             self.path_results = self.base_directory + 'results/' + 'backpropagating_AP_CA3_PC/' + model.name + '/'
