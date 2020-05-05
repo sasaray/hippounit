@@ -258,7 +258,6 @@ class BackpropagatingAPTest_BasketCell(Test):
         plt.plot(trace['T'],trace['V'])
         '''
 
-
         return traces_results_soma, traces_results_apical, traces_results_basal
 
 
@@ -292,46 +291,48 @@ class BackpropagatingAPTest_BasketCell(Test):
         start_index_AP1, end_index_AP1, start_index_APlast, end_index_APlast = time_indices_befor_and_after_somatic_AP
 
         # zoom to first and last AP apical
-        fig1, axs1 = plt.subplots(1,2)
-        plt.subplots_adjust(wspace = 0.4)
-        axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r')
-        axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_apical['v_rec'].items():
-            axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key])
-            axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
-        axs1[0].set_xlabel('time (ms)')
-        axs1[0].set_ylabel('membrane potential (mV)')
-        axs1[0].set_title('First AP')
-        axs1[0].set_xlim(traces_soma_and_apical['T'][start_index_AP1], traces_soma_and_apical['T'][end_index_AP1])
-        axs1[1].set_xlabel('time (ms)')
-        axs1[1].set_ylabel('membrane potential (mV)')
-        axs1[1].set_title('Last AP')
-        axs1[1].set_xlim(traces_soma_and_apical['T'][start_index_APlast], traces_soma_and_apical['T'][end_index_APlast])
-        lgd=axs1[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        fig1.suptitle('Apical dendrites')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'First_and_last_AP_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        if traces_soma_and_apical['v_rec']:
+            fig1, axs1 = plt.subplots(1,2)
+            plt.subplots_adjust(wspace = 0.4)
+            axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r')
+            axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_apical['v_rec'].items():
+                axs1[0].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key])
+                axs1[1].plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+            axs1[0].set_xlabel('time (ms)')
+            axs1[0].set_ylabel('membrane potential (mV)')
+            axs1[0].set_title('First AP')
+            axs1[0].set_xlim(traces_soma_and_apical['T'][start_index_AP1], traces_soma_and_apical['T'][end_index_AP1])
+            axs1[1].set_xlabel('time (ms)')
+            axs1[1].set_ylabel('membrane potential (mV)')
+            axs1[1].set_title('Last AP')
+            axs1[1].set_xlim(traces_soma_and_apical['T'][start_index_APlast], traces_soma_and_apical['T'][end_index_APlast])
+            lgd=axs1[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+            fig1.suptitle('Apical dendrites')
+            if self.save_all:
+                plt.savefig(self.path_figs + 'First_and_last_AP_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
         # zoom to first and last AP basal
-        fig2, axs2 = plt.subplots(1,2)
-        plt.subplots_adjust(wspace = 0.4)
-        axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r')
-        axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_basal['v_rec'].items():
-            axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key])
-            axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
-        axs2[0].set_xlabel('time (ms)')
-        axs2[0].set_ylabel('membrane potential (mV)')
-        axs2[0].set_title('First AP')
-        axs2[0].set_xlim(traces_soma_and_basal['T'][start_index_AP1], traces_soma_and_basal['T'][end_index_AP1])
-        axs2[1].set_xlabel('time (ms)')
-        axs2[1].set_ylabel('membrane potential (mV)')
-        axs2[1].set_title('Last AP')
-        axs2[1].set_xlim(traces_soma_and_basal['T'][start_index_APlast], traces_soma_and_basal['T'][end_index_APlast])
-        lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        fig2.suptitle('Basal dendrites')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'First_and_last_AP_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        if traces_soma_and_basal['v_rec']:
+            fig2, axs2 = plt.subplots(1,2)
+            plt.subplots_adjust(wspace = 0.4)
+            axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r')
+            axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_basal['v_rec'].items():
+                axs2[0].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key])
+                axs2[1].plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+            axs2[0].set_xlabel('time (ms)')
+            axs2[0].set_ylabel('membrane potential (mV)')
+            axs2[0].set_title('First AP')
+            axs2[0].set_xlim(traces_soma_and_basal['T'][start_index_AP1], traces_soma_and_basal['T'][end_index_AP1])
+            axs2[1].set_xlabel('time (ms)')
+            axs2[1].set_ylabel('membrane potential (mV)')
+            axs2[1].set_title('Last AP')
+            axs2[1].set_xlim(traces_soma_and_basal['T'][start_index_APlast], traces_soma_and_basal['T'][end_index_APlast])
+            lgd=axs2[1].legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+            fig2.suptitle('Basal dendrites')
+            if self.save_all:
+                plt.savefig(self.path_figs + 'First_and_last_AP_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
     def extract_prediction_features(self, efel_features_somatic, efel_features_apical, efel_features_basal, apical_locations_distances, basal_locations_distances, distances_apical, tolerance_apical, distances_basal, tolerance_basal):
@@ -699,25 +700,28 @@ class BackpropagatingAPTest_BasketCell(Test):
 
         print("The figures are saved in the directory: ", self.path_figs)
 
-        plt.figure(1)
-        plt.plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_apical['v_rec'].items():
-            plt.plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
-        plt.xlabel('time (ms)')
-        plt.ylabel('membrane potential (mV)')
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'traces_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        if traces_soma_and_apical['v_rec']:
+            plt.figure(1)
+            plt.plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_apical['v_rec'].items():
+                plt.plot(traces_soma_and_apical['T'],traces_soma_and_apical['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(apical_locations_distances[key])+' um')
+            plt.xlabel('time (ms)')
+            plt.ylabel('membrane potential (mV)')
+            lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+            if self.save_all:
+                plt.savefig(self.path_figs + 'traces_apical'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-        plt.figure(2)
-        plt.plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
-        for key, value in traces_soma_and_basal['v_rec'].items():
-            plt.plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
-        plt.xlabel('time (ms)')
-        plt.ylabel('membrane potential (mV)')
-        lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
-        if self.save_all:
-            plt.savefig(self.path_figs + 'traces_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+        if traces_soma_and_basal['v_rec']:
+            plt.figure(2)
+            plt.plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_stim'], 'r', label = 'soma')
+            for key, value in traces_soma_and_basal['v_rec'].items():
+                plt.plot(traces_soma_and_basal['T'],traces_soma_and_basal['v_rec'][key], label = key[0]+'('+str(key[1])+') at '+str(basal_locations_distances[key])+' um')
+            plt.xlabel('time (ms)')
+            plt.ylabel('membrane potential (mV)')
+            lgd=plt.legend(bbox_to_anchor=(1.0, 1.0), loc = 'upper left')
+            if self.save_all:
+                plt.savefig(self.path_figs + 'traces_basal'+ '.pdf', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
     '''
@@ -778,7 +782,7 @@ class BackpropagatingAPTest_BasketCell(Test):
             basal_locations = []
             basal_locations_distances = []
 
-        dend_locations = apical_locations + basal_locations   # so the simulation is run only once, and record from alll the locations at the same time 
+        dend_locations = apical_locations + basal_locations   # so the simulation is run only once, and record from all the locations at the same time 
 
         traces={}
         delay = self.config['stimulus']['delay']
