@@ -92,7 +92,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
                 save_all = True,
                 num_of_apical_dend_locations = 15,
                 num_of_basal_dend_locations = 15,
-                random_seed = 1):
+                random_seed = 1,
+                trunk_origin = None,
+                basal_origin = None):
 
         observation = self.format_data(observation)
 
@@ -112,6 +114,8 @@ class BackpropagatingAPTest_CA3_PC(Test):
         self.path_temp_data = None #added later, because model name is needed
         self.path_figs = None
         self.path_results = None
+        self.trunk_origin = trunk_origin
+        self.basal_origin = basal_origin
 
         self.logFile = None
         self.test_log_filename = 'test_log.txt'
@@ -1281,12 +1285,12 @@ class BackpropagatingAPTest_CA3_PC(Test):
         dist_range_basal = [min(distances_basal) - tolerance_basal, max(distances_basal) + tolerance_basal]
 
        # apical_locations, apical_locations_distances = model.get_random_locations_multiproc('apical', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical) # number of random locations , seed
-        apical_locations, apical_locations_distances = model.get_random_locations_multiproc('trunk', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical)
+        apical_locations, apical_locations_distances = model.get_random_locations_multiproc('trunk', self.num_of_apical_dend_locations, self.random_seed, dist_range_apical, self.trunk_origin)
         # apical_locations_distances = sorted(apical_locations_distances, key=apical_locations_distances.get)
         #print dend_locations, actual_distances
         print('Apical dendritic locations to be tested (with their actual distances):', apical_locations_distances)
 
-        basal_locations, basal_locations_distances = model.get_random_locations_multiproc('basal', self.num_of_basal_dend_locations, self.random_seed, dist_range_basal) # number of random locations , seed
+        basal_locations, basal_locations_distances = model.get_random_locations_multiproc('basal', self.num_of_basal_dend_locations, self.random_seed, dist_range_basal, self.basal_origin) # number of random locations , seed
         # basal_locations_distances = sorted(basal_locations_distances, key=basal_locations_distances.get)
         #print dend_locations, actual_distances
         print('Basal dendritic locations to be tested (with their actual distances):', basal_locations_distances)

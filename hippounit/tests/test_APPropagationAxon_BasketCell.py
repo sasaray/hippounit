@@ -91,7 +91,8 @@ class APPropagationAxonTest_BasketCell(Test):
                 show_plot=True,
                 save_all = True,
                 num_of_axonal_locations = 15,
-                random_seed = 1):
+                random_seed = 1,
+                axon_origin = None):
 
         observation = self.format_data(observation)
 
@@ -110,6 +111,7 @@ class APPropagationAxonTest_BasketCell(Test):
         self.path_temp_data = None #added later, because model name is needed
         self.path_figs = None
         self.path_results = None
+        self.axon_origin = axon_origin
 
         self.logFile = None
         self.test_log_filename = 'test_log.txt'
@@ -561,7 +563,7 @@ class APPropagationAxonTest_BasketCell(Test):
         dist_range = [min(distances) - tolerance, max(distances) + tolerance]
 
 
-        axon_locations, axon_locations_distances = model.get_random_locations_multiproc('axon', self.num_of_axonal_locations, self.random_seed, dist_range) # number of random locations , seed
+        axon_locations, axon_locations_distances = model.get_random_locations_multiproc('axon', self.num_of_axonal_locations, self.random_seed, dist_range, self.axon_origin) # number of random locations , seed
         print('Axonal locations to be tested (with their actual distances):', axon_locations_distances)
 
 
@@ -655,8 +657,8 @@ class APPropagationAxonTest_BasketCell(Test):
 
     def bind_score(self, score, model, observation, prediction):
 
-        score.related_data["figures"] = [self.path_figs + 'First_and_last_AP_basal.pdf', self.path_figs + 'bAP_BC_feature_errors.pdf', self.path_figs + 'First_and_last_AP_apical.pdf', self.path_figs + 'traces_basal.pdf', self.path_figs + 'traces_apical.pdf', self.path_figs + 'bAP_BC_mean_features.pdf', self.path_figs + 'bAP_BC_features.pdf', self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p', self.path_results + self.test_log_filename]
+        score.related_data["figures"] = [self.path_figs + 'AP_prop_axon_BC_feature_errors.pdf', self.path_figs + 'AP_prop_axon_mean_features.pdf', self.path_figs + 'AP_prop_axon_BC_features.pdf', self.path_figs + 'traces.pdf', self.path_figs + 'First_and_last_AP.pdf', self.path_results + 'AP_prop_axon_BC_final_score.json', self.path_results + 'AP_prop_axon_BC_errors.json', self.path_results + 'AP_prop_axon_BasketCell_model_features.p', self.path_results + 'AP_prop_axon_BasketCell_model_features.json', self.path_results + 'AP_prop_axon_BasketCell_mean_model_features.p', self.path_results + 'AP_prop_axon_BasketCell_mean_model_features.json', self.path_results + self.test_log_filename]
 
-        score.related_data["results"] = [self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p']
+        score.related_data["results"] = [self.path_results + 'AP_prop_axon_BC_final_score.json', self.path_results + 'AP_prop_axon_BC_errors.json', self.path_results + 'AP_prop_axon_BasketCell_model_features.p', self.path_results + 'AP_prop_axon_BasketCell_model_features.json', self.path_results + 'AP_prop_axon_BasketCell_mean_model_features.p', self.path_results + 'AP_prop_axon_BasketCell_mean_model_features.json', self.path_results + self.test_log_filename]
 
         return score
