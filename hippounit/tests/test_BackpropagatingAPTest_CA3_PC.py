@@ -990,9 +990,9 @@ class BackpropagatingAPTest_CA3_PC(Test):
         plt.subplots_adjust(hspace = 0.7, wspace = 1.5)
         # markers = ['s', '.', '*'] 
         try:
-	    colormap = plt.cm.spectral    
+            colormap = plt.cm.spectral    
         except:
-	    colormap = plt.cm.nipy_spectral
+            colormap = plt.cm.nipy_spectral
         colors = colormap(numpy.linspace(0, 0.9, len(list(errors['soma']['train of brief inputs'].keys()))+1))
 
 
