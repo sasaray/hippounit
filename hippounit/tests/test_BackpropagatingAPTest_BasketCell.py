@@ -888,7 +888,14 @@ class BackpropagatingAPTest_BasketCell(Test):
 
     def bind_score(self, score, model, observation, prediction):
 
-        score.related_data["figures"] = [self.path_figs + 'First_and_last_AP_basal.pdf', self.path_figs + 'bAP_BC_feature_errors.pdf', self.path_figs + 'First_and_last_AP_apical.pdf', self.path_figs + 'traces_basal.pdf', self.path_figs + 'traces_apical.pdf', self.path_figs + 'bAP_BC_mean_features.pdf', self.path_figs + 'bAP_BC_features.pdf', self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p', self.path_results + self.test_log_filename]
+        score.related_data["figures"] = [self.path_figs + 'bAP_BC_feature_errors.pdf', self.path_figs + 'bAP_BC_mean_features.pdf', self.path_figs + 'bAP_BC_features.pdf', self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p', self.path_results + self.test_log_filename]
+
+        if self.num_of_apical_dend_locations != 0:
+            score.related_data["figures"].append(self.path_figs + 'First_and_last_AP_apical.pdf')
+            score.related_data["figures"].append(self.path_figs + 'traces_apical.pdf')
+        if self.num_of_basal_dend_locations != 0:
+            score.related_data["figures"].append(self.path_figs + 'First_and_last_AP_basal.pdf')
+            score.related_data["figures"].append(self.path_figs + 'traces_basal.pdf')
 
         score.related_data["results"] = [self.path_results + 'bAP_BasketCell_mean_model_features.json', self.path_results + 'bAP_BasketCell_model_features.p', self.path_results + 'bAP_BC_errors.json', self.path_results + 'bAP_BC_final_score.json', self.path_results + 'bAP_BasketCell_model_features.json', self.path_results + 'bAP_BasketCell_mean_model_features.p']
 
