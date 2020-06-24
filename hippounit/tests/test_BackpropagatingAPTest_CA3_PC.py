@@ -990,7 +990,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
         plt.subplots_adjust(hspace = 0.7, wspace = 1.5)
         # markers = ['s', '.', '*'] 
         try:
-            colormap = plt.cm.spectral    
+            colormap = plt.cm.spectral
         except:
             colormap = plt.cm.nipy_spectral
         colors = colormap(numpy.linspace(0, 0.9, len(list(errors['soma']['train of brief inputs'].keys()))+1))
@@ -1479,7 +1479,7 @@ class BackpropagatingAPTest_CA3_PC(Test):
 
     def bind_score(self, score, model, observation, prediction):
 
-        score.related_data["figures"] = [self.path_figs + 'bAP_CA3_PC_mean_features_long_input.pdf', self.path_figs + 'traces_pulses_basal.pdf',  self.path_figs + 'First_and_fifth_APs_apical.pdf', self.path_figs + 'First_and_fifth_APs_basal.pdf', self.path_figs + 'bAP_CA3_PC_mean_features_short_pulses.pdf', self.path_figs + 'traces_long_rheobase_input_basal.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_long_input.pdf', self.path_figs + 'traces_pulses_apical.pdf', self.path_results + 'traces_long_rheobase_input_apical.pdf', self.path_figs + 'bAP_CA3_PC_features_short_pulses.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_brief_pulses.pdf', self.path_figs + 'bAP_CA3_PC_features_long_input.pdf',self.path_results + 'bAP_CA3_PC_mean_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.json', self.path_results + 'bAP_CA3_PC_final_score.json', self.path_results + 'bAP_CA3_PC_mean_model_features.json', self.path_results + 'bAP_CA3_PC_errors.json', self.path_results + self.test_log_filename]
+        score.related_data["figures"] = [self.path_figs + 'bAP_CA3_PC_mean_features_long_input.pdf', self.path_figs + 'traces_pulses_basal.pdf',  self.path_figs + 'First_and_fifth_APs_apical.pdf', self.path_figs + 'First_and_fifth_APs_basal.pdf', self.path_figs + 'bAP_CA3_PC_mean_features_short_pulses.pdf', self.path_figs + 'traces_long_rheobase_input_basal.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_long_input.pdf', self.path_figs + 'traces_pulses_apical.pdf', self.path_figs + 'traces_long_rheobase_input_apical.pdf', self.path_figs + 'bAP_CA3_PC_features_short_pulses.pdf', self.path_figs + 'bAP_CA3_PC_feature_errors_brief_pulses.pdf', self.path_figs + 'bAP_CA3_PC_features_long_input.pdf',self.path_results + 'bAP_CA3_PC_mean_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.json', self.path_results + 'bAP_CA3_PC_final_score.json', self.path_results + 'bAP_CA3_PC_mean_model_features.json', self.path_results + 'bAP_CA3_PC_errors.json', self.path_results + self.test_log_filename]
 
 
         score.related_data["results"] = [self.path_results + 'bAP_CA3_PC_mean_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.p', self.path_results + 'bAP_CA3_PC_model_features.json', self.path_results + 'bAP_CA3_PC_final_score.json', self.path_results + 'bAP_CA3_PC_mean_model_features.json', self.path_results + 'bAP_CA3_PC_errors.json']
