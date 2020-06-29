@@ -75,6 +75,53 @@ Features tested:
 Score used: Average of Z-scores. (Also available: p value from T-test. If the p value < 0.05, the model mean differs from the experimental mean)
 
 
+New tests (in development status)
+-----------------------------------------
+
+BackpropagatingAPTest_CA3_PC
+--------------------------------
+
+Tests efficacy and shape of back-propagating action potentials on the basal and apical dendrites of CA3 pyramidal cell models.
+
+Features tested:
+
+* action potential amplitude and half-duration at different distances on the dendrites from the soma, for rheobase somatic current injection.
+* amplitude and half-duration of first and fifth AP at different distances on the dendrites from the soma, for 10 short somatic current pulses with 20, 50 and 100 Hz frequency.
+
+Target data are from Kim et al. (2012) Nature Neuroscience, doi:10.1038/nn.3060
+
+Score type: average of Z-scores.
+
+
+BackpropagatingAPTest_BasketCell
+-------------------------------------
+
+Tests efficacy and shape of back-propagating action potentials on the basal and apical dendrites of basket cells. 
+
+Features tested:
+
+* amplitude, max rise slope and half-duration of first and last back-propagating action potentials in a 1 s train at different distances on the dendrites from the soma
+
+Target data are from Hu et al. (2010), Science, doi:10.1126/science.1177876
+
+Score type: average of Z-scores.
+
+
+APPropagatipnAxon_BasketCell
+-------------------------------
+
+Tests efficacy and shape of propagating action potentials to the axons from the soma. 
+
+Features tested:
+
+* amplitude and half-duration of first and last action potentials in a 1 s train at different distances on the axon.
+
+
+Target data are from Hu et al. (2018), Neuron, https://doi.org/10.1016/j.neuron.2018.02.024
+
+Score type: average of Z-scores.
+
+
 Install HippoUnit
 ------------------
 
